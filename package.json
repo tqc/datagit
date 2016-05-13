@@ -11,12 +11,15 @@
     "url": "https://github.com/tqc/datagit/issues"
   },
   "scripts": {
-    "test": "eslint . && mocha",
+    "test": "eslint . && mocha --compilers js:babel-core/register",
     "compile": "babel src -d build"
   },
   "main": "./build",
   "esnext:main": "./src",
-  "dependencies": {},
+  "dependencies": {
+    "fs-extra": "^0.30.0",
+    "gitrunner": "^2.0.1"
+  },
   "devDependencies": {
     "babel-cli": "^6.7.5",
     "babel-core": "^6.7.6",
