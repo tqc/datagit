@@ -36,7 +36,7 @@ before(function(done) {
         global.testRepo = new Repo({
             id: global.testId,
             path: path.resolve(testDir, global.testId),
-            db: db,            
+            db: db,
             git: {},
             branch: "master"
         });
@@ -49,7 +49,7 @@ before(function(done) {
 
         // git.reset("")
 
-        // db contains any files previously loaded, under a store object which includes 
+        // db contains any files previously loaded, under a store object which includes
         // the last synced commit id - undefined for a new repo.
 
         // can create a file at this point
@@ -63,7 +63,7 @@ before(function(done) {
 
         // should the working tree exist?
         // probably best that it doesn't to simplify renaming etc
-        // can still avoid loading files completely into db by using git hashes rather 
+        // can still avoid loading files completely into db by using git hashes rather
         // than filenames - eg
         //    {
         //      fileId: dbid,
@@ -71,16 +71,16 @@ before(function(done) {
         //      files: [{
         //          commitPath: "/folder/file.txt",
         //          commitHash: "0123456789abcdef0123",
-        //          currentHash: "0123456789abcdef0123" 
+        //          currentHash: "0123456789abcdef0123"
         //          }]
         //    }
         // A db change can either write the file to git immediately, updating the hash,
         // or clear the hash so it will be written and recalculated on sync.
-        // 
-        // Changes need to be tracked so that a complete traverse is not 
-        // needed to create a commit. 
+        //
+        // Changes need to be tracked so that a complete traverse is not
+        // needed to create a commit.
         // files do not necessarily store parentId.
-        // write commit path to a changes list. This can also be derived by 
+        // write commit path to a changes list. This can also be derived by
         // searching for currentHash != commitHash
         // expand changes list, use to skip unchanged objects.
 
@@ -94,7 +94,7 @@ after(function(done) {
     console.log("end test run");
 
     console.log("deleting test files");
-    
+
     fs.removeSync(global.testRepo.path);
 
     done();

@@ -9,8 +9,8 @@ export class File extends Syncable {
         // load from mongo
     }
     static getItems(treehash) {
-        // Given a listing of the parent folder, work out what items of this type 
-        // should exist. 
+        // Given a listing of the parent folder, work out what items of this type
+        // should exist.
 
         var list = this.repo.getFolderList(treehash);
         // Start with a known list, so already persisted items can be reused and updated
@@ -22,7 +22,7 @@ export class File extends Syncable {
             claims: [o.name]
         }));
 
-        // Each item claims one or more records in the folder, to allow for fallback to 
+        // Each item claims one or more records in the folder, to allow for fallback to
         // generic file/folder type.
 
         /*
@@ -41,7 +41,7 @@ export class File extends Syncable {
 
         // for a default file, matching is simply those with the same name.
 
-        // more complex strategies are possible, for example matching on title only or 
+        // more complex strategies are possible, for example matching on title only or
         // on the closest available item not claimed as an exact match for something else.
 
         return [
@@ -64,7 +64,7 @@ export class File extends Syncable {
 
         // returns a list of files to be written to the parent folder
         return [
-            {            
+            {
                 name: "01 Test.md",
                 sha: "sha1hash",
                 type: "blob"
