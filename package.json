@@ -27,10 +27,9 @@
     "babel-eslint": "^6.0.2",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.7.4",
     "chai": "^3.5.0",
-    "eslint": "^2.7.0",
-    "eslint-config-tqc": "0.0.4",
-    "mocha": "^2.4.5",
-    "publish": "^0.5.0"
+    "eslint": "^2.13.0",
+    "eslint-config-tqc": "^1.0.6",
+    "mocha": "^2.4.5"
   },
   "engines": {
     "node": ">=4 < 7"
