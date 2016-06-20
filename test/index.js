@@ -1,10 +1,17 @@
-import "./test1";
+import "./init";
+import "./initialsync";
+
+
 import fs from "fs-extra";
 import path from "path";
-import * as DB from "../src/db";
-import {Repo} from "../src/repo";
+import * as DB from "../example/db";
+import {TestRepo} from "../example";
 import * as GitRunner from "gitrunner";
+import chai from "chai";
 var git = GitRunner.Sync;
+
+global.expect = chai.expect;
+
 
 before(function(done) {
     console.log("set up test run");
@@ -29,17 +36,19 @@ before(function(done) {
         if (err) throw err;
 /*
         db.Stores.add({
-            id: global.testId,
-            lastSyncedCommit: undefined
         });
 */
-        global.testRepo = new Repo({
+        var storeConfig = global.storeConfig = {
             id: global.testId,
-            path: path.resolve(testDir, global.testId),
-            db: db,
-            git: {},
-            branch: "master"
-        });
+            cloneUrl: path.resolve(testDir, "repo"),
+            localPath: path.resolve(testDir, global.testId),
+            branch: "master",
+            lastSyncedCommit: undefined
+        };
+
+
+        global.testRepo = new TestRepo(storeConfig, db, git);
+
 
         // this just creates a link to the repo which may or may not already exist
         // if the folder does not exist, it is created with git init.

@@ -6,6 +6,4 @@ import {Repo} from "./Repo";
 
 import {Git} from "./git";
 
-
-
 export {Syncable, File, Folder, Repo, Git};
