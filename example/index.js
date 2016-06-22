@@ -54,6 +54,28 @@ export class TestRepo extends DataGit.Repo {
 
         // todo: implement properly
 
+        // assuming initial sync, just have to read root object from repo
+
+        // get trees from repo for merge
+
+        // there are no local changes outside the db; we are always merging with a remote tracking branch.
+        // possible exception when there are unpushed commits
+
+        // git.getTrees(a, b) // returns trees for each branch and their concestor; optimized to share refs for
+        // common nodes
+
+
+        //var dbRoot = {};
+        //var lastSyncedTree = undefined;
+        //var dbTree = git.tree(this.storeConfig.localPath, repoCommit);
+
+        // walk the tree
+        //dbRoot.claimNodes(dbTree, repoTree, concestor)
+
+        //dbRoot.merge(dbTree, repoTree, concestor)
+
+        // var repoTree =
+
 
         this.storeConfig.lastCommitSynced = repoCommit;
     }
