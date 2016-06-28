@@ -13,4 +13,10 @@ describe("init", function() {
         expect(status.status).to.equal("Unsynced");
     });
 
+    it("should get the expected tree", function() {
+        var tree = global.testRepo.tree("5f67a055d759fed862546e379794958b5ef65a2d");
+        expect(Object.keys(tree.contents)).to.have.length(2);
+        expect(Object.keys(tree.contents["folder"].contents)).to.have.length(1);
+    });
+
 });

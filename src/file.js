@@ -5,6 +5,40 @@ export class File extends Syncable {
         super(repo);
 
     }
+    static findAll(treeNode) {
+        if (!treeNode) return [];
+        var result = [];
+        for (let k in treeNode.contents) {
+            let node = treeNode.contents[k];
+            if (node.claimed) continue;
+            if (node.type == "blob") {
+                node.claimed = true;
+                result.push({
+                    claimedFiles: [k],
+                    name: k,
+                    hash: node.hash,
+                    node: node
+                });
+            }
+        }
+        return result;
+    }
+    static mergeMatchedNodes(concestorFolders, dbFolders, repoFolders) {
+        var changesets = [];
+        // now we need to turn these lists into a change set:
+        // v1, v2, v3; where blank implies new/deleted
+        for (let i = 0; i < repoFolders.length; i++) {
+            if (concestorFolders.length == 0 && dbFolders.length == 0) {
+                // special case first read
+                changesets.push({
+                    concestor: null,
+                    local: null,
+                    remote: repoFolders[i]
+                });
+            }
+        }
+        return changesets;
+    }
     static getById(repo, id) {
         // load from mongo
     }
@@ -71,25 +105,7 @@ export class File extends Syncable {
             }
         ];
     }
-    merge(concestor, remote) {
-        // merge in remote changes for this item and all child items
-
-        // parameters are lightweight item details returned from getItems
-
-        // if a change is not needed, just return current file list.
-
-        // update the main file - eg text merge of content fields
-
-        // call getitems/mergelist for each collection
-
-        // merge each child collection
-
-        // add the merge results to the file list, optionally in tree form.
-
-        // like commit, this returns a list of items to be added to the parent folder.
-
-        return {
-            "01 Test.md": "sha1hash"
-        };
+    merge(concestor, local, remote) {
+        // given file nodes, update the properties of the db object.
     }
 }

@@ -4,31 +4,100 @@ import {File} from "./file";
 export class Folder extends Syncable {
     constructor(repo) {
         super(repo);
-        this.ChildTypes = [File, Folder];
+        this.ChildTypes = [
+            File,
+            Folder
+        ];
+        this.files = [];
+        this.folders = [];
+        this.childTypeCollections = [
+            this.files,
+            this.folders
+        ];
     }
-    readAll(treeNode) {
+    static findAll(treeNode) {
+        if (!treeNode) return [];
         var result = [];
-        // loop through unclaimed nodes; add any folders
-        // this allows for claiming multiple files in the parent node
-        for (var k in treeNode) {
-            if (treeNode[k].type == "tree") {
-                var f = new Folder(this.repo);
-                result.push(f.readFromTree(treeNode[k]));
+        for (let k in treeNode.contents) {
+            let node = treeNode.contents[k];
+            if (node.claimed) continue;
+            if (node.type == "tree") {
+                node.claimed = true;
+                result.push({
+                    claimedFiles: [k],
+                    name: k,
+                    hash: node.hash,
+                    node: node
+                });
             }
         }
         return result;
     }
-    readFromTree(treeNode) {
-        this.claim(treeNode["index.json"]);
-
-        this.files = File.readAll(treeNode);
-        this.folders = Folder.readAll(treeNode);
-
+    static mergeMatchedNodes(concestorFolders, dbFolders, repoFolders, dbObjects) {
+        var changesets = [];
+        // now we need to turn these lists into a change set:
+        // v1, v2, v3; where blank implies new/deleted
+        for (let i = 0; i < repoFolders.length; i++) {
+            if (concestorFolders.length == 0 && dbFolders.length == 0) {
+                // special case first read
+                changesets.push({
+                    concestor: null,
+                    local: null,
+                    remote: repoFolders[i]
+                });
+            }
+        }
+        return changesets;
     }
-    getChildItems() {
-        // given a tree,
+    writeTree(dbTree) {
+        var nodes = [];
+        return nodes;
     }
     merge(concestorTree, dbTree, repoTree) {
+        var result = [];
 
+        for (let i = 0; i < this.ChildTypes.length; i++) {
+            let T = this.ChildTypes[i];
+            var concestorFolders = T.findAll(concestorTree);
+            var dbFolders = T.findAll(dbTree);
+            var repoFolders = T.findAll(repoTree);
+
+            var collection = this.childTypeCollections[i];
+
+            var changesets = T.mergeMatchedNodes(concestorFolders, dbFolders, repoFolders, collection);
+
+            for (let j = 0; j < changesets.length; j++) {
+                var cs = changesets[j];
+                var dbitem;
+                if (!cs.local && !cs.remote) {
+                    // removed from both - ignore
+                    continue;
+                }
+                else if (cs.concestor && cs.local && !cs.remote) {
+                    // deleted remotely
+                    if (cs.local.node.hash == cs.concestor.node.hash) {
+                        // todo: delete from db
+                    }
+                    else {
+                        // changed locally - ignore deletion
+                    }
+                }
+                else if (!cs.local && cs.remote) {
+                    // new version - read from remote
+                    dbitem = new T(this.repo);
+                    dbitem.merge(null, null, cs.remote.node);
+                    collection.push(dbitem);
+                }
+                else if (cs.local && cs.remote) {
+                    // both exist; need to compare to concestor
+                    dbitem = cs.local.dbitem;
+                    dbitem.merge(cs.concestor && cs.concestor.node, cs.local.node, cs.remote.node);
+                }
+            }
+
+        }
+
+
+        return result;
     }
 }

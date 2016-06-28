@@ -24,6 +24,9 @@ export class TestRepo extends DataGit.Repo {
             });
         }
     }
+    tree(commit) {
+        return this.git.tree(this.storeConfig.localPath, commit);
+    }
     status() {
         if (!fs.existsSync(this.storeConfig.localPath)) {
             return {
@@ -57,6 +60,11 @@ export class TestRepo extends DataGit.Repo {
         // assuming initial sync, just have to read root object from repo
 
         // get trees from repo for merge
+
+        var tree = this.tree(repoCommit);
+
+        this.Root.merge(null, null, tree);
+
 
         // there are no local changes outside the db; we are always merging with a remote tracking branch.
         // possible exception when there are unpushed commits
