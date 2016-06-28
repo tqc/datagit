@@ -2,7 +2,7 @@ import {Syncable} from "./syncable";
 import {File} from "./file";
 import {Folder} from "./folder";
 
-import {Repo} from "./Repo";
+import {Repo} from "./repo";
 
 import {Git} from "./git";
 
