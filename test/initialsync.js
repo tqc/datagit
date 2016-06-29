@@ -29,11 +29,4 @@ describe("initial sync", function() {
     });
 
 
-    it("should populate the database", function() {
-        var files = global.testRepo.db.Files.list();
-        expect(files).to.exist;
-        expect(files).to.have.length(3);
-    });
-
-
 });

@@ -1,11 +1,12 @@
 import "./init";
 import "./initialsync";
-
+import "./blog";
 
 import fs from "fs-extra";
 import path from "path";
-import * as DB from "../example/db";
-import {TestRepo} from "../example";
+import * as DB from "../examples/db";
+import {TestRepo} from "../examples/raw";
+import {BlogRepo} from "../examples/blog";
 import * as GitRunner from "gitrunner";
 import chai from "chai";
 var git = GitRunner.Sync;
@@ -41,13 +42,14 @@ before(function(done) {
         var storeConfig = global.storeConfig = {
             id: global.testId,
             cloneUrl: path.resolve(testDir, "repo"),
-            localPath: path.resolve(testDir, global.testId),
+            path: path.resolve(testDir, global.testId),
             branch: "master",
             lastSyncedCommit: undefined
         };
 
 
         global.testRepo = new TestRepo(storeConfig, db, git);
+        global.blogRepo = new BlogRepo(storeConfig, db, git);
 
 
         // this just creates a link to the repo which may or may not already exist

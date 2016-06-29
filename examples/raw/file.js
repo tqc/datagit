@@ -1,8 +1,8 @@
-import {Syncable} from "./syncable";
+import * as DataGit from "../../src";
 
-export class File extends Syncable {
-    constructor(repo) {
-        super(repo);
+export class File extends DataGit.Syncable {
+    constructor() {
+        super();
 
     }
     static findAll(treeNode) {

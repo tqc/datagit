@@ -1,12 +1,11 @@
-import {Syncable} from "./syncable";
-import {File} from "./file";
+import * as DataGit from "../../src";
+import {Post} from "./post";
 
-export class Folder extends Syncable {
-    constructor(repo) {
-        super(repo);
+export class Blog extends DataGit.Syncable {
+    constructor() {
+        super();
         this.ChildTypes = [
-            File,
-            Folder
+            Post
         ];
         this.files = [];
         this.folders = [];
