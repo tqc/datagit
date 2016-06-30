@@ -15,8 +15,7 @@ export class Syncable {
             .concat(Object.keys(b))
             .filter((v, i, arr) => arr.indexOf(v) === i);
 
-        for (let i = 0; i < allKeys.length; i++) {
-            var k = allKeys[i];
+        for (let k of allKeys) {
             if (a[k] === b[k]) result[k] = a[k];
             else if (a[k] === o[k]) result[k] = b[k];
             else if (b[k] === o[k]) result[k] = a[k];
@@ -56,8 +55,7 @@ export class Syncable {
             var collection = this.childTypeCollections[i];
             var mmn = T.mergeMatchedNodes || Syncable.mergeMatchedNodes;
             var changesets = mmn(concestorFolders, dbFolders, repoFolders, collection);
-            for (let j = 0; j < changesets.length; j++) {
-                var cs = changesets[j];
+            for (let cs of changesets) {
                 var dbitem;
                 if (!cs.local && !cs.remote) {
                     // removed from both - ignore

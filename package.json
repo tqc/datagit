@@ -19,7 +19,7 @@
   "esnext:main": "./src",
   "dependencies": {
     "fs-extra": "^0.30.0",
-    "gitrunner": "^2.0.1"
+    "gitrunner": "^2.0.8"
   },
   "devDependencies": {
     "babel-cli": "^6.7.5",
