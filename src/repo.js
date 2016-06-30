@@ -36,6 +36,12 @@ export class Repo {
 
         return status;
     }
+    readString(sha) {
+        return this.git.show(this.path, sha);
+    }
+    tree(commit) {
+        return this.git.tree(this.path, commit);
+    }
     sync() {
         var repoCommit = this.git.currentHead(this.path);
         var dbCommit = this.config.lastCommitSynced;
@@ -51,7 +57,7 @@ export class Repo {
 
         var tree = this.tree(repoCommit);
 
-        this.Root.merge(null, null, tree);
+        this.Root.merge(this, null, null, tree);
 
 
         // there are no local changes outside the db; we are always merging with a remote tracking branch.

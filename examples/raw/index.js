@@ -19,12 +19,6 @@ export class TestRepo extends DataGit.Repo {
     saveToDb(db) {
         // saves the store config
     }
-
-    tree(commit) {
-        return this.git.tree(this.path, commit);
-    }
-
-
     persist() {
         // create the git folder if necessary
         // save details to mongo

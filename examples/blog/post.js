@@ -7,14 +7,16 @@ export class Post extends DataGit.Syncable {
     }
     static findAll(treeNode) {
         if (!treeNode) return [];
+        if (!treeNode.contents["_posts"]) return [];
+        treeNode.contents["_posts"].claimed = true;
         var result = [];
-        for (let k in treeNode.contents) {
-            let node = treeNode.contents[k];
+        for (let k in treeNode.contents["_posts"].contents) {
+            let node = treeNode.contents["_posts"].contents[k];
             if (node.claimed) continue;
             if (node.type == "blob") {
                 node.claimed = true;
                 result.push({
-                    claimedFiles: [k],
+                    claimedFiles: "_posts/" + [k],
                     name: k,
                     hash: node.hash,
                     node: node
@@ -22,22 +24,6 @@ export class Post extends DataGit.Syncable {
             }
         }
         return result;
-    }
-    static mergeMatchedNodes(concestorFolders, dbFolders, repoFolders) {
-        var changesets = [];
-        // now we need to turn these lists into a change set:
-        // v1, v2, v3; where blank implies new/deleted
-        for (let i = 0; i < repoFolders.length; i++) {
-            if (concestorFolders.length == 0 && dbFolders.length == 0) {
-                // special case first read
-                changesets.push({
-                    concestor: null,
-                    local: null,
-                    remote: repoFolders[i]
-                });
-            }
-        }
-        return changesets;
     }
     static getById(repo, id) {
         // load from mongo
@@ -70,7 +56,7 @@ export class Post extends DataGit.Syncable {
         ]*/
 
     }
-    static mergeList(concestorItems, localItems, remoteItems) {
+    static mergeList(repo, concestorItems, localItems, remoteItems) {
         // given the three lists, create a new one combining them at item level
 
         // for a default file, matching is simply those with the same name.
@@ -105,7 +91,7 @@ export class Post extends DataGit.Syncable {
             }
         ];
     }
-    merge(concestor, local, remote) {
+    merge(repo, concestor, local, remote) {
         // given file nodes, update the properties of the db object.
     }
 }

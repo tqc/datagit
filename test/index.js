@@ -1,6 +1,6 @@
-import "./init";
-import "./initialsync";
-import "./blog";
+import "./01-init";
+import "./02-initialsync";
+import "./03-blog";
 
 import fs from "fs-extra";
 import path from "path";
@@ -39,7 +39,7 @@ before(function(done) {
         db.Stores.add({
         });
 */
-        var storeConfig = global.storeConfig = {
+        var storeConfig1 = global.storeConfig = {
             id: global.testId,
             cloneUrl: path.resolve(testDir, "repo"),
             path: path.resolve(testDir, global.testId),
@@ -48,8 +48,18 @@ before(function(done) {
         };
 
 
-        global.testRepo = new TestRepo(storeConfig, db, git);
-        global.blogRepo = new BlogRepo(storeConfig, db, git);
+        var storeConfig2 = global.storeConfig = {
+            id: global.testId,
+            cloneUrl: path.resolve(testDir, "repo"),
+            path: path.resolve(testDir, global.testId),
+            branch: "master",
+            lastSyncedCommit: undefined
+        };
+
+
+
+        global.testRepo = new TestRepo(storeConfig1, db, git);
+        global.blogRepo = new BlogRepo(storeConfig2, db, git);
 
 
         // this just creates a link to the repo which may or may not already exist
@@ -106,7 +116,7 @@ after(function(done) {
 
     console.log("deleting test files");
 
-    fs.removeSync(global.testRepo.path);
+   // fs.removeSync(global.testRepo.path);
 
     done();
 });
