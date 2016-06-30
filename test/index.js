@@ -16,6 +16,8 @@ global.expect = chai.expect;
 
 before(function(done) {
     console.log("set up test run");
+    // allow time for git clone to run if needed
+    this.timeout(30000);
     // make sure the test repo exists
     var testDir = path.resolve(__dirname, "../build/test");
     var testRepoDir = path.resolve(testDir, "repo");
