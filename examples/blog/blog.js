@@ -43,11 +43,25 @@ export class Blog extends DataGit.Syncable {
         result.title = repoContents.title;
         return result;
     }
+    properties() {
+        return {
+            title: this.title
+        };
+    }
     resolveConflict(k, o, a, b) {
         // this can be overridden differently for specific keys
         return a;
     }
     applyProperties(repo, p) {
         this.title = p.title;
+    }
+    commit(repo, dbTree) {
+        // read properties from db and dbTree - if changed, write config.json
+
+        // todo: implement properly
+        return [{
+            type: "tree",
+            hash: dbTree.hash
+        }];
     }
 }

@@ -45,9 +45,12 @@ export class Folder extends DataGit.Syncable {
         result.name = tree.name;
         return result;
     }
-
     applyProperties(repo, p) {
         this.name = p.name;
     }
-
+    properties() {
+        return {
+            name: this.name
+        };
+    }
 }

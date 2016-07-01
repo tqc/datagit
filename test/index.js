@@ -1,6 +1,6 @@
-import "./01-init";
-import "./02-initialsync";
-import "./03-blog";
+import "./file";
+import "./blog";
+
 
 import fs from "fs-extra";
 import path from "path";
@@ -12,6 +12,15 @@ import chai from "chai";
 var git = GitRunner.Sync;
 
 global.expect = chai.expect;
+
+global.commits = {
+    initial: "7cd4197623b4154d7ac1c37012b3a048f8fc5256"
+};
+
+global.trees = {
+    initial: "358590579df64fded36d7e81e11e7adb6d6b4616",
+    editedpost: "e57f0cba7d00c72c57ada6eb2d1dabb0d75794aa"
+};
 
 
 before(function(done) {
@@ -31,9 +40,6 @@ before(function(done) {
         });
     }
 
-    // generate a unique id for the test run
-
-    global.testId = DB.generateUUID();
 
     DB.open({}, function(err, db) {
         if (err) throw err;
@@ -41,19 +47,22 @@ before(function(done) {
         db.Stores.add({
         });
 */
-        var storeConfig1 = global.storeConfig = {
-            id: global.testId,
+
+        var testId1 = DB.generateUUID();
+        var storeConfig1 = {
+            id: testId1,
             cloneUrl: path.resolve(testDir, "repo"),
-            path: path.resolve(testDir, global.testId),
+            path: path.resolve(testDir, testId1),
             branch: "master",
             lastSyncedCommit: undefined
         };
 
 
-        var storeConfig2 = global.storeConfig = {
-            id: global.testId,
+        var testId2 = DB.generateUUID();
+        var storeConfig2 = {
+            id: testId2,
             cloneUrl: path.resolve(testDir, "repo"),
-            path: path.resolve(testDir, global.testId),
+            path: path.resolve(testDir, testId2),
             branch: "master",
             lastSyncedCommit: undefined
         };
@@ -118,7 +127,8 @@ after(function(done) {
 
     console.log("deleting test files");
 
-   // fs.removeSync(global.testRepo.path);
+    fs.removeSync(global.testRepo.path);
+    fs.removeSync(global.blogRepo.path);
 
     done();
 });

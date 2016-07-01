@@ -91,7 +91,27 @@ export class Post extends DataGit.Syncable {
             }
         ];
     }
-    merge(repo, concestor, local, remote) {
-        // given file nodes, update the properties of the db object.
+    properties() {
+        return {
+            content: this.content
+        };
     }
+    readProperties(repo, node) {
+        var result = {};
+        if (!node) return result;
+        node.claimed = true;
+        var fileContents = repo.readString(node.hash);
+        var split = fileContents.indexOf("---", 3);
+        // ignore front matter for now
+        result.content = fileContents.substr(split + 4);
+        return result;
+    }
+    resolveConflict(k, o, a, b) {
+        // this can be overridden differently for specific keys
+        return a;
+    }
+    applyProperties(repo, p) {
+        this.content = p.content;
+    }
+
 }

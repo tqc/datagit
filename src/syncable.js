@@ -4,8 +4,7 @@ export class Syncable {
         // todo: add shortcuts for unchanged trees
 
         var o = this.readProperties(repo, concestorTree);
-        // this should really just read from the object
-        var a = this.readProperties(repo, dbTree);
+        var a = this.properties();
         var b = this.readProperties(repo, repoTree);
 
         var result = {};
@@ -84,6 +83,11 @@ export class Syncable {
             }
         }
     }
+    properties() {
+        // get properties from the db object to use in merging
+        return {
+        };
+    }
     readProperties(repo, tree) {
         var result = {};
         return result;
@@ -102,5 +106,12 @@ export class Syncable {
         this.mergeChildItems(repo, concestorTree, dbTree, repoTree);
 
         return result;
+    }
+    commit(repo, dbTree) {
+        // todo: implement properly
+        return [{
+            type: "tree",
+            hash: dbTree.hash
+        }];
     }
 }
