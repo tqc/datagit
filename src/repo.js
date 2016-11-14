@@ -1,84 +1,246 @@
-import fs from "fs";
+// Handles low level / standard git operations
+import fs from "fs-extra";
+import path from "path";
+import {Async as git} from "gitrunner";
 
-export class Repo {
-    constructor(config, db, git) {
-        this.path = config.path;
-        this.db = db;
-        this.git = git;
-        this.config = config;
-        this.cloneUrl = config.cloneUrl;
+class GitRepo {
+    constructor(options) {
+        this.options = options;
     }
-    ensureExists() {
-        if (!fs.existsSync(this.path)) {
-            this.git.run(process.cwd(), {
-                params: ["clone", this.cloneUrl, this.path]
-            });
-        }
-    }
-    status() {
-        if (!fs.existsSync(this.path)) {
-            return {
-                status: "Uninitialized"
-            };
+    ensureLocalRepo(callback) {
+        var repo = this;
+        var gitRoot = process.env.GIT_BASE_PATH;
+        if (!gitRoot) return callback("Git path not set");
+        var userPath = path.resolve(gitRoot, this.options.user);
+        if (!fs.existsSync(userPath)) fs.mkdirsSync(userPath);
+
+        this.path = path.resolve(userPath, this.options.id);
+
+        var user = repo.options.userSettings;
+
+
+        // todo: fail if key missing
+        var keyPath = path.resolve(userPath, "id_rsa");
+        if (!fs.existsSync(keyPath)) {
+            fs.writeFileSync(keyPath, user.privateKey, { encoding: "utf-8", mode: 0o600 });
         }
 
-        var status = {
-            status: "Unknown",
-            dbChanged: !!this.config.dbChanged,
-            dbCommit: this.config.lastCommitSynced,
-            repoCommit: this.git.currentHead(this.path)
+
+        this.spawnOptions = {
+            cwd: this.path,
+            env: {
+                GIT_AUTHOR_NAME: user.name,
+                GIT_AUTHOR_EMAIL: user.email,
+                GIT_COMMITTER_NAME: user.name,
+                GIT_COMMITTER_EMAIL: user.email,
+                // avoid prompt for host key
+                // use user specific client key
+                // ignore any system config file
+                GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no -i " + keyPath + " -F /dev/null"
+            }
         };
 
-        if (!status.dbCommit) status.status = "Unsynced";
-        else if (status.dbCommit == status.repoCommit) status.status = "Clean";
-        else if (status.dbCommit != status.repoCommit) status.status = "Needs Sync (repo changes)";
-        else if (status.dbChanged) status.status = "Needs Sync (db changes)";
+        // todo: this isn't valid if git init failed - need to properly test for valid repo
+        if (fs.existsSync(repo.path)) return callback();
+        fs.mkdirsSync(repo.path);
+        git.run(repo.spawnOptions,
+            [{
+                params: (options) => ['init', '--bare']
+            },
+            {
+                params: (options) => ['remote', 'add', 'origin', repo.options.remoteUrl]
+            }],
+            {},
+            callback);
 
-        return status;
     }
-    readString(sha) {
-        return this.git.show(this.path, sha);
+    connect(callback) {
+        console.log("Attempt setup of git repo");
+
+        this.ensureLocalRepo(function(err) {
+            if (err) return callback(err);
+
+            var result = {
+                message: "Connecting",
+                remoteCommit: "1234",
+                localCommit: "2345",
+                remoteChanges: 1,
+                localChanges: 2,
+                uncommittedLocalChanges: true
+            };
+
+
+            callback(null, result, true);
+        });
     }
-    tree(commit) {
-        return this.git.tree(this.path, commit);
+    fetch(callback) {
+        var repo = this;
+        console.log("Attempt fetch of git repo");
+        var result = {
+            message: "Fetching",
+            remoteCommit: "1234",
+            localCommit: "2345",
+            remoteChanges: 1,
+            localChanges: 2,
+            uncommittedLocalChanges: true
+        };
+
+        callback(null, result, false);
+        git.run(repo.spawnOptions, [{
+            params: (options) => ['fetch', 'origin']
+        },
+        {
+            params: (options) => ['rev-parse', 'origin/master'],
+            process: function(res, code, output) {
+                if (code === 0) {
+                    res.branch = output.substr(0, output.indexOf("\n"));
+                } else {
+                    // new repo with no branches defined yet
+                }
+                return result;
+            }
+        }], {}, function(err, res) {
+            if (err) return callback(err);
+            result.message = "Fetched";
+            result.remoteCommit = res.branch;
+            callback(null, result, true);
+        });
     }
-    sync() {
-        var repoCommit = this.git.currentHead(this.path);
-        var dbCommit = this.config.lastCommitSynced;
-        var dbChanged = !!this.config.dbChanged;
+    readTree(commit, callback) {
+        var repo = this;
+        git.tree(repo.spawnOptions, commit, function(err, tree) {
+            console.log(commit);
+            console.log(err);
+            console.log(tree);
+            callback(err, tree);
+        });
+    }
+    readString(hash, callback) {
+        var repo = this;
+        git.show(repo.spawnOptions, hash, callback);
+    }
+    getCommitsForMerge(callback) {
+        var repo = this;
+        // not used directly to read tree, only for finding concestor
+        var a = repo.options.lastCommitSynced;
+        var b = repo.options.remoteCommit;
+        var o;
+        if (!a || !b) return callback(null, o, a, b);
+        else if (a == b) return callback(null, a, a, b);
 
-        if (repoCommit == dbCommit && !dbChanged) return;
+        git.run(
+            repo.spawnOptions,
+            [{
+                params: (options, result) => ['merge-base', a, b],
+                process: function(result, code, output) {
+                    result.baseRef = output.substr(0, output.indexOf("\n"));
+                }
+            }],
+            {},
+            function(err, res) {
+                if (err) return callback(err);
+                callback(null, res.baseRef, a, b);
+            }
+        );
+    }
+    writeTextFile(s, callback) {
+        var repo = this;
+        git.run(
+            repo.spawnOptions,
+            [{
+                params: (options, result) => ["hash-object", "-w", "--stdin"],
+                provideInput: function(stdin) {
+                    stdin.setEncoding("utf-8");
+                    stdin.write(s);
+                    stdin.end();
+                },
+                process: function(result, code, output) {
+                    if (code != 0) {
+                        console.log(output);
+                        throw new Error("Unexpected exit code " + code);
+                    }
+                    result.fileRef = output.substr(0, output.indexOf("\n"));
+                }
+            }],
+            {},
+            function(err, res) {
+                if (err) return callback(err);
+                callback(null, res.fileRef);
+            }
+        );
 
-        // todo: implement properly
+    }
+    writeTree(treeNodes, callback) {
+        var sortedNodes = treeNodes.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 
-        // assuming initial sync, just have to read root object from repo
+        var repo = this;
+        git.run(
+            repo.spawnOptions,
+            [{
+                params: (options, result) => ['mktree'],
+                provideInput: function(stdin) {
+                    stdin.setEncoding("utf-8");
+                    for (var i = 0; i < sortedNodes.length; i++) {
+                        var n = sortedNodes[i];
+                        stdin.write(n.permissions + " " + n.type + " " + n.hash + "\t" + n.name + "\n");
+                    }
+                    stdin.end();
+                },
+                process: function(result, code, output) {
+                    if (code != 0) {
+                        console.log(output);
+                        throw new Error("Unexpected exit code " + code);
+                    }
+                    result.treeRef = output.substr(0, output.indexOf("\n"));
+                }
+            }],
+            {},
+            function(err, res) {
+                if (err) return callback(err);
+                callback(null, res.treeRef);
+            }
+        );
 
-        // get trees from repo for merge
+    }
+    writeCommit(treeRef, parentCommits, message, callback) {
+        var repo = this;
 
-        var tree = this.tree(repoCommit);
+        var params = ["commit-tree", treeRef];
+        for (var i = 0; i < parentCommits.length; i++) {
+            params = params.concat(["-p", parentCommits[i].substr(parentCommits[i].indexOf(":") + 1)]);
+        }
+        git.run(
+            repo.spawnOptions,
+            [{
+                params: (options, result) => params,
+                provideInput: function(stdin) {
+                    stdin.setEncoding("utf-8");
+                    stdin.write(message);
+                    stdin.end();
+                },
+                process: function(result, code, output) {
+                    if (code != 0) {
+                        console.log(output);
+                        throw new Error("Unexpected exit code " + code);
+                    }
+                    result.commitRef = output.substr(0, output.indexOf("\n"));
+                }
+            }],
+            {},
+            function(err, res) {
+                if (err) return callback(err);
+                callback(null, res.commitRef);
+            }
+        );
 
-        this.Root.merge(this, null, null, tree);
+    }
 
+    commit() {
 
-        // there are no local changes outside the db; we are always merging with a remote tracking branch.
-        // possible exception when there are unpushed commits
+    }
+    push() {
 
-        // git.getTrees(a, b) // returns trees for each branch and their concestor; optimized to share refs for
-        // common nodes
-
-
-        //var dbRoot = {};
-        //var lastSyncedTree = undefined;
-        //var dbTree = git.tree(this.storeConfig.localPath, repoCommit);
-
-        // walk the tree
-        //dbRoot.claimNodes(dbTree, repoTree, concestor)
-
-        //dbRoot.merge(dbTree, repoTree, concestor)
-
-        // var repoTree =
-
-
-        this.config.lastCommitSynced = repoCommit;
     }
 }
+
+export default GitRepo;

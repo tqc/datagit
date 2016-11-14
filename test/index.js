@@ -1,15 +1,19 @@
-import "./file";
-import "./blog";
+//import "./file";
+//import "./blog";
 
 
 import fs from "fs-extra";
 import path from "path";
+import Mongo from "mongo-mock";
+
 import * as DB from "../examples/db";
-import {TestRepo} from "../examples/raw";
-import {BlogRepo} from "../examples/blog";
+//import {TestRepo} from "../examples/raw";
+//import {BlogRepo} from "../examples/blog";
 import * as GitRunner from "gitrunner";
 import chai from "chai";
 var git = GitRunner.Sync;
+
+global.Mongo = Mongo;
 
 global.expect = chai.expect;
 
@@ -47,7 +51,7 @@ before(function(done) {
         db.Stores.add({
         });
 */
-
+/*
         var testId1 = DB.generateUUID();
         var storeConfig1 = {
             id: testId1,
@@ -66,11 +70,11 @@ before(function(done) {
             branch: "master",
             lastSyncedCommit: undefined
         };
+*/
 
 
-
-        global.testRepo = new TestRepo(storeConfig1, db, git);
-        global.blogRepo = new BlogRepo(storeConfig2, db, git);
+       // global.testRepo = new TestRepo(storeConfig1, db, git);
+       // global.blogRepo = new BlogRepo(storeConfig2, db, git);
 
 
         // this just creates a link to the repo which may or may not already exist
@@ -127,8 +131,8 @@ after(function(done) {
 
     console.log("deleting test files");
 
-    fs.removeSync(global.testRepo.path);
-    fs.removeSync(global.blogRepo.path);
+    //fs.removeSync(global.testRepo.path);
+    //fs.removeSync(global.blogRepo.path);
 
     done();
 });

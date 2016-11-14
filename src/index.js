@@ -1,7 +1,6 @@
-import {Syncable} from "./syncable";
+import DataHandler from "./datahandler";
+import Repo from "./repo";
+import Syncable from "./syncable";
+import TreeNode from "./treenode";
 
-import {Repo} from "./repo";
-
-import {Git} from "./git";
-
-export {Syncable, Repo, Git};
+export default {DataHandler, Syncable, Repo, TreeNode};
