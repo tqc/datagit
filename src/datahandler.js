@@ -97,7 +97,7 @@ class DataHandler {
                 var parentKey = entity.parentKey || "parent";
                 var allKeys = Object.keys(allEntities[entity.key]);
                 var filteredKeys = allKeys.filter(k => allEntities[entity.key][k][parentKey] == parentId);
-                entity.getTreeNodesForEntities(dh, allEntities, filteredKeys.map(k=>allEntities[entity.key][k]), function(err, arr) {
+                entity.getTreeNodesForEntities(dh, allEntities, filteredKeys.map(k => allEntities[entity.key][k]), function(err, arr) {
                     if (err) return callback(err);
                     treeNodes.push.apply(treeNodes, arr);
                     nextType();
