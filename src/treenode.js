@@ -1,6 +1,6 @@
 import cuid from "cuid";
 import async from "async";
-import Syncable from "./Syncable";
+import Syncable from "./syncable";
 
 function removeIdUnderscore(o) {
     if (o._id) {
