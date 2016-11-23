@@ -238,8 +238,36 @@ class GitRepo {
     commit() {
 
     }
-    push() {
+    push(callback) {
+        // todo: check that branches to be pushed are valid
+        // todo: handle rejected push
+        var repo = this;
 
+        var result = {
+            message: "Pushing",
+            remoteCommit: repo.options.remoteCommit,
+            lastCommitSynced: repo.lastCommitSynced,
+            remoteChanges: 1,
+            localChanges: 2,
+            uncommittedLocalChanges: true
+        };
+
+        callback(null, result, false);
+
+        var params = ["push", "origin", repo.options.lastCommitSynced + ":" + repo.options.branch];
+        git.run(
+            repo.spawnOptions,
+            [{
+                params: (options, result) => params
+            }],
+            {},
+            function(err, res) {
+                if (err) return callback(err);
+                result.message = "Pushed";
+                result.remoteCommit = repo.options.lastCommitSynced;
+                callback(null, result, true);
+            }
+        );
     }
 }
 
