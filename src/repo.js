@@ -119,6 +119,14 @@ class GitRepo {
         var repo = this;
         git.show(repo.spawnOptions, hash, callback);
     }
+    readImage(hash, callback) {
+        var repo = this;
+        git.show({
+            ...repo.spawnOptions,
+            encoding: "binary",
+            maxBuffer: 5000 * 1024
+        }, hash, callback);
+    }
     getCommitsForMerge(callback) {
         var repo = this;
         // not used directly to read tree, only for finding concestor
