@@ -106,7 +106,7 @@ class GitRepo {
                     namedHashes[k] = hash;
                     next(err);
                 });
-           },
+            },
            (err) => {
                done(err, namedHashes);
            }

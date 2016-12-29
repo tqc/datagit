@@ -1,4 +1,4 @@
-import {repoTest, repoFetchTest} from "./testutil";
+import {repoTest, remoteRepoTest} from "./testutil";
 import cuid from "cuid";
 import path from "path";
 import {GitRunnerRepo} from "../src";
@@ -18,6 +18,6 @@ describe("GitRunnerRepo", () => {
 
     repoTest(() => sharedRepo);
 
-    repoFetchTest(() => newRepo);
+    remoteRepoTest(() => newRepo);
 
 });

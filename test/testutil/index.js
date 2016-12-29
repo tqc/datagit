@@ -69,7 +69,7 @@ function progressCallback(logArray) {
 
 // test lower level git functions for a repo implementation
 // assumes an existing synced git repo
-export function RepoTest(getRepo) {
+export function repoTest(getRepo) {
     describe("low level repo operations", function() {
         var repo;
         let namedHashes = {
@@ -226,15 +226,18 @@ export function RepoTest(getRepo) {
 
 // test lower level git functions for a repo implementation
 // integration tests that test fetch/push functionality
-export function RemoteRepoTest(getRepo) {
+export function remoteRepoTest(getRepo) {
     describe("repo remote ops integration test", function() {
+        var repo;
         before(function() {
             repo = getRepo();
             // run connect
         });
 
         // run fetch, call getPathHash
-
+        it("should get repo", () => {
+            expect(repo).to.exist;
+        });
         // write test commit, push to remote with id branch
         // check that it shows up in fetch refs
         // delete remote test branch
