@@ -262,7 +262,7 @@ class DataHandler {
     merge(lastCommitSynced, dbEntities, remoteCommit) {
 
     }
-    // read all entities from a given tree node 
+    // read all entities from a given tree node
     processTreeNode(treeNode, parentEntity, expectedEntityKeys, handleFoundEntity, done) {
         var dh = this;
         var unclaimedNodes = Object.keys(treeNode.contents);

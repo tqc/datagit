@@ -48,20 +48,21 @@ before(function(done) {
 
     DB.open({}, function(err, db) {
         if (err) throw err;
+        global.testDb = db;
 
         global.testRepoConfig = {
             id: cuid(),
-            user: testUserId,
-		      remoteUrl: "git@bitbucket.org:tqc/datagittest.git",
-            userSettings = {
+            user: "testUserId",
+            remoteUrl: "git@bitbucket.org:tqc/datagittest.git",
+            userSettings: {
                 name: "Test User",
                 email: "testuser@example.com",
                 privateKey: undefined
-            };
+            }
         };
-        
-        global.testRepoPath = path.resolve(testDir, repo);
-        
+
+        global.testRepoPath = path.resolve(testDir, "repo");
+
         done();
     });
 });

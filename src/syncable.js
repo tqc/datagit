@@ -7,7 +7,7 @@ import yamlfm from "./yamlfm";
 import yaml from "js-yaml";
 
 class Syncable {
-	key = "syncable"
+    key = "syncable"
     constructor(dh) {
         this.dataHandler = dh;
     }
@@ -34,7 +34,7 @@ class Syncable {
     // assumes no need for access to other nodes in parent folder
     // if that is needed, override process directly.
     readEntityFromNode(n, parentEntity, handleFoundEntity, done) {
-        done("readEntityFromNode Not Implemented for "+ this.key);
+        done("readEntityFromNode Not Implemented for " + this.key);
     }
     // formerly known as process
     readEntitiesFromTree(parentEntity, treeNode, unclaimedNodes, handleFoundEntity, callback) {
@@ -55,7 +55,7 @@ class Syncable {
                 if (err) return callback(err);
                 callback(null, remainingNodes);
             });
-    },
+    }
     loadFromDb(dataHandler, handleFoundEntity, callback) {
         callback("Not Implemented");
     }
@@ -70,14 +70,14 @@ class Syncable {
         // this one must be implemented to avoid saving all the git metadata to the db
         callback("Not Implemented");
     }
-    populateFullData: function(allEntities, entity, callback) {
+    populateFullData(allEntities, entity, callback) {
         if (allEntities.source == "db") {
             this.populateFromDb(allEntities, entity, callback);
         }
         else {
             this.populateFromGit(allEntities, entity, callback);
         }
-    },
+    }
     merge(o, a, b, callback) {
         callback("Not Implemented");
     }
@@ -101,7 +101,7 @@ class Syncable {
         }
         batch.execute();
         callback();
-    },
+    }
     getTreeNodesForEntity(dh, allEntities, entity, index, callback) {
         callback("Not Implemented");
     }
@@ -109,7 +109,7 @@ class Syncable {
     getTreeNodesForEntities(allEntities, filteredEntities, callback) {
         var treeNodes = [];
         if (typeof this.sortBy == "string") {
-            filteredEntities = filteredEntities.sort((a, b) => a[this.sortBy] < b[this.sortBy] ? -1 : a[this.sortBy] > b[this.sortBy] ? 1 : 0),
+            filteredEntities = filteredEntities.sort((a, b) => a[this.sortBy] < b[this.sortBy] ? -1 : a[this.sortBy] > b[this.sortBy] ? 1 : 0);
         }
         async.eachOfSeries(
             filteredEntities,
@@ -131,10 +131,10 @@ class Syncable {
 export default Syncable;
 
 
-export default class Story extends Syncable {
+class Story extends Syncable {
     key = "story";
     dbCollection = "Books";
-    sortBy = "slug";    
+    sortBy = "slug";
 
     // return true if this node will be handled as this entity type
     // do we need to pass any other parameters?
@@ -143,39 +143,39 @@ export default class Story extends Syncable {
         if (node.contents["story.md"]) return true;
         return false;
     }
-    
-writeConfigFile(object, callback) {
 
-    var skippedKeys = ["id", "chapters", "description", "slug", "user", "repo", "contentHash"];
+    writeConfigFile(object, callback) {
 
-    var cfg = {};
-    for (let k in object) {
-        if (skippedKeys.indexOf(k) >= 0) continue;
-        cfg[k] = object[k];
+        var skippedKeys = ["id", "chapters", "description", "slug", "user", "repo", "contentHash"];
+
+        var cfg = {};
+        for (let k in object) {
+            if (skippedKeys.indexOf(k) >= 0) continue;
+            cfg[k] = object[k];
+        }
+
+        var fm = yaml.dump(cfg, {});
+        var fc = "---\n" + fm + "---\n" + object.description;
+        console.log(fc);
+        this.dataHandler.repo.writeTextFile(fc, callback);
     }
-
-    var fm = yaml.dump(cfg, {});
-    var fc = "---\n" + fm + "---\n" + object.description;
-    console.log(fc);
-    this.dataHandler.repo.writeTextFile(fc, callback);
-}    
     // assuming claimedNode returned true, process the node
     // assumes no need for access to other nodes in parent folder
     // if that is needed, override process directly.
     readEntityFromNode(n, parentEntity, handleFoundEntity, done) {
                     // return story entity based on story.md, look for chapters in folder
-                    var e = {
-                        id: cuid(),
-                        slug: n.name,
-                        contentHash: n.hash,
-                        treeNode: n,
-                        repo: dataHandler.repo.options.id,
-                        user: dataHandler.repo.options.user
-                    };
+        var e = {
+            id: cuid(),
+            slug: n.name,
+            contentHash: n.hash,
+            treeNode: n,
+            repo: dataHandler.repo.options.id,
+            user: dataHandler.repo.options.user
+        };
 
-                    handleFoundEntity("story", e);
+        handleFoundEntity("story", e);
                     // need to look up instances of these classes - or maybe just pass in keys
-                    this.dataHandler.processTreeNode(n, e, ["chapter", "cover", "treenode"], handleFoundEntity, next);    
+        this.dataHandler.processTreeNode(n, e, ["chapter", "cover", "treenode"], handleFoundEntity, next);
     }
     // load all entities from the database. only need to load enough data for comparison with
     // entities loaded from git tree nodes
@@ -192,19 +192,19 @@ writeConfigFile(object, callback) {
     // should correspond directly to the objects in the database.
     populateFromGit(allEntities, entity, callback) {
             // load story.md from git
-            var configHash = entity.treeNode.contents["story.md"].hash;
-            dataHandler.repo.readString(configHash, function(err, contents) {
-                if (err) callback(err);
+        var configHash = entity.treeNode.contents["story.md"].hash;
+        dataHandler.repo.readString(configHash, function(err, contents) {
+            if (err) callback(err);
                 //console.log(contents);
-                let cfg = yamlfm.parse(contents, "description");
+            let cfg = yamlfm.parse(contents, "description");
                 //console.log(cfg);
-                cfg.contentHash = entity.contentHash;
-                entity.fullData = cfg;
-                cfg._id = entity.id;
-                cfg.user = entity.user;
-                cfg.repo = entity.repo;
-                cfg.slug = entity.slug;
-                cfg.chapters = Object.keys(allEntities.chapter)
+            cfg.contentHash = entity.contentHash;
+            entity.fullData = cfg;
+            cfg._id = entity.id;
+            cfg.user = entity.user;
+            cfg.repo = entity.repo;
+            cfg.slug = entity.slug;
+            cfg.chapters = Object.keys(allEntities.chapter)
                     .map(k => allEntities.chapter[k])
                     .filter(c => c.story == entity.id)
                     .sort((a, b) => {
@@ -214,15 +214,15 @@ writeConfigFile(object, callback) {
                     })
                     .map(e => e.id);
                 //console.log(cfg);
-                callback(null, entity.fullData);
-            });    
+            callback(null, entity.fullData);
+        });
     }
 
     merge(o, a, b, callback) {
         // all three objects will be set and populated with full data at this point.
         var changedFields = {};
         callback(null, changedFields);
-    },
+    }
     getTreeNodesForEntity(dh, allEntities, entity, index, callback) {
         var treeNodes = [];
 
@@ -264,6 +264,4 @@ writeConfigFile(object, callback) {
         });
 
     }
-};
-
-export default Story;
+}

@@ -1,7 +1,7 @@
 // Handles low level / standard git operations
 import fs from "fs-extra";
 import path from "path";
-import BaseRepo from "./baserepo"
+import BaseRepo from "./baserepo";
 import {Async as git} from "gitrunner";
 
 /**
@@ -16,7 +16,7 @@ class GitRunnerRepo extends BaseRepo {
     constructor(options, gitRootTemplate) {
         this.options = options;
         this.repoPath = gitRootTemplate
-            .replace(/:userId/, options.user);
+            .replace(/:userId/, options.user)
             .replace(/:repoId/, options.id);
     }
     ensureLocalRepo(callback, progress) {
@@ -25,7 +25,7 @@ class GitRunnerRepo extends BaseRepo {
         if (!repoPath) return callback("Git path not set");
 
         var userPath = path.resolve(repoPath, "..");
-        
+
         if (!fs.existsSync(userPath)) fs.mkdirsSync(userPath);
 
         var user = repo.options.userSettings;
@@ -285,8 +285,8 @@ class GitRunnerRepo extends BaseRepo {
     }
     // used for testing
     getPathHash(ref, path, callback) {
-        callback("Not Implemented");    
-    }    
+        callback("Not Implemented");
+    }
 }
 
 export default GitRunnerRepo;

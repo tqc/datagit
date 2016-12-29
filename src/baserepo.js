@@ -6,7 +6,7 @@ import {Async as git} from "gitrunner";
  * @class GitRepo
  **/
 class GitRepo {
-	 /**
+     /**
      * @param options
      * @param options.id unique id for the repo
      * @param options.user user id
@@ -15,12 +15,8 @@ class GitRepo {
      * @param options.userSettings.name display name used for commits
      * @param options.userSettings.email email used for commits
      * @param options.userSettings.privateKey optional private key if needed for ssh fetch/push
-	  **/
+      **/
     constructor(options) {
-    
-    }
-    
-    
         this.options = options;
     }
     /**
@@ -69,7 +65,7 @@ class GitRepo {
         callback("Not Implemented");
     }
     /**
-     * Given an array of tree nodes, write a tree to git 
+     * Given an array of tree nodes, write a tree to git
      * and return the hash.
      * @param treeNodes {array}
      **/
@@ -78,7 +74,7 @@ class GitRepo {
     }
     /**
      * Create a commit for a given tree ref
-     * @param treeRef 
+     * @param treeRef
      * @param parentCommits array of parent commit hashes
      * @param message
      * @param done {function}
@@ -99,32 +95,32 @@ class GitRepo {
      * @param path File path. "/" for root tree, "" for commit.
      **/
     getPathHash(ref, path, callback) {
-        callback("Not Implemented");    
+        callback("Not Implemented");
     }
     /**
      * get multiple named references - for convenient use in tests
      **/
     updateNamedHashes(namedHashes, done) {
-       async.each(Object.keys(namedHashes), 
+        async.each(Object.keys(namedHashes),
            (k, next) => {
                let v = namedHashes[k];
-               let ind = v.indexOf(":"); 
+               let ind = v.indexOf(":");
                if (ind < 0) {
                    // assume this entry is already a valid hash
                    next();
                } else {
-                   getPathHash(v.substr(0, ind), v.substr(ind+1), 
+                   getPathHash(v.substr(0, ind), v.substr(ind + 1),
                        (err, hash) => {
                            namedHashes[k] = hash;
                            next(err);
                        }
-                   )
+                   );
                }
            },
            (err) => {
-               done(err, namedHashes);    
+               done(err, namedHashes);
            }
-       )
+       );
     }
 }
 
