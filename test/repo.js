@@ -11,7 +11,7 @@ describe("GitRunnerRepo", () => {
             global.testRepoPath
             );
         newRepo = new GitRunnerRepo(
-            {...global.testRepo.options, id: cuid()},
+            {...global.testRepoSettings, id: cuid()},
             path.resolve(__dirname, "../build/test/:repoId")
             );
     });
