@@ -18,7 +18,7 @@ function addIdUnderscore(o) {
     return o;
 }
 
-class TreeNodeHandler extends Syncable {
+export default class TreeNodeHandler extends Syncable {
     constructor() {
         super();
         this.key = "treenode";
@@ -112,6 +112,3 @@ class TreeNodeHandler extends Syncable {
         );
     }
 }
-
-var TreeNode = new TreeNodeHandler();
-export default TreeNode;

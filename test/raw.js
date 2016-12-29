@@ -16,10 +16,11 @@ describe("raw data handler", function() {
         baseTree: "initial:/"
 // todo: full set of commits
     };
-    let sharedDataHandler = getDataHandler();
+    let sharedDataHandler;
     before(function(done) {
+        sharedDataHandler = getDataHandler();
         sharedDataHandler.connect((err) => {
-            expect(err).should.not.exist;
+            expect(err).to.not.exist;
             sharedDataHandler.repo.updateNamedHashes(namedHashes, done);
         });
     });
@@ -29,14 +30,14 @@ describe("raw data handler", function() {
         let entities = {};
         before(function(done) {
             sharedDataHandler.readFullEntitiesFromCommit(namedHashes.baseCommit, (err, d) => {
-                expect(err).should.not.exist;
+                expect(err).to.not.exist;
                 entities = d;
                 done();
             });
         });
 
         it("should find one post", function() {
-            expect(entities.treenode).should.exist;
+            expect(entities.treenode).to.exist;
             expect(Object.keys(entities.treenode)).to.have.length(1);
         });
 
@@ -58,11 +59,13 @@ describe("raw data handler", function() {
 
     describe("db update", function() {
 // test reading entity collection
-        let dh = getDataHandler();
+        let dh;
 
         before(function(done) {
+            dh = getDataHandler();
+
             dh.repo.connect((err) => {
-                expect(err).should.not.exist;
+                expect(err).to.not.exist;
                 // run initial import
                 // check expected lastCommitSynced
                 done();
@@ -86,11 +89,12 @@ describe("raw data handler", function() {
 
     describe("entity collection", function() {
 // new db setup, run merges of known branches
-        let dh = getDataHandler();
+        let dh;
 
         before(function(done) {
+            dh = getDataHandler();
             dh.connect((err) => {
-                expect(err).should.not.exist;
+                expect(err).to.not.exist;
                 // run initial import
                 // check expected lastCommitSynced
             });

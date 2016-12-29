@@ -11,7 +11,7 @@
     "url": "https://github.com/tqc/datagit/issues"
   },
   "scripts": {
-    "test": "eslint . && mocha --compilers js:babel-core/register",
+    "test": "eslint . && mocha test/index.js --compilers js:babel-core/register",
     "prepublish": "babel src -d build",
     "compile": "babel src -d build"
   },

@@ -1,6 +1,7 @@
 import DataHandler from "./datahandler";
-import Repo from "./repo";
+import BaseRepo from "./baserepo";
+import GitRunnerRepo from "./gitrunnerrepo";
 import Syncable from "./syncable";
 import TreeNode from "./treenode";
 
-export default {DataHandler, Syncable, Repo, TreeNode};
+export {DataHandler, Syncable, BaseRepo, GitRunnerRepo, TreeNode};
