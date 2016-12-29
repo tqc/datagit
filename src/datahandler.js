@@ -1,19 +1,15 @@
-import GitRepo from "./repo";
 import async from "async";
 
 class DataHandler {
-    constructor(repoSettings, db, entityClasses) {
-        // later the repo implementation class could be passed in as a parameter
-        // to allow alternate implementations
-        this.repo = new GitRepo(repoSettings);
-        this.entity = entities;
+    constructor(repo, db, entityClasses) {
+        this.repo = repo;
         this.entityHandlers = {};
         // default list of entities valid at root level
-        this.allEntityKeys = {};
+        this.allEntityKeys = [];
         this.db = db;
         for (let e of entityClasses) {
             this.entityHandlers[e.key] = new e(this);
-            allEntityKeys.push(e.key);
+            this.allEntityKeys.push(e.key);
         }
     }
     connect(callback) {
@@ -267,10 +263,10 @@ class DataHandler {
         var dh = this;
         var unclaimedNodes = Object.keys(treeNode.contents);
         async.eachSeries(
-            expectedEntityKeys || this.allEntityKeys,
+            expectedEntityKeys || dh.allEntityKeys,
             function(entityKey, next) {
                 // iterate files
-                let entity = this.entityHandlers[entityKey];
+                let entity = dh.entityHandlers[entityKey];
                 console.log("Looking for " + entity.key);
                 entity.readEntitiesFromTree(parentEntity, treeNode,
                     unclaimedNodes,

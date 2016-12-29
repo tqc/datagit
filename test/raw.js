@@ -1,10 +1,7 @@
 import cuid from "cuid";
 import {TreeNode, GitRunnerRepo, DataHandler} from "../src";
-import {importTest} from "./testutils";
-
 
 describe("raw data handler", function() {
-    var testRepo;
 
     function getDataHandler() {
         let testRepo = new GitRunnerRepo({...global.testRepoConfig, id: cuid()}, global.testRepoPath);
@@ -15,8 +12,9 @@ describe("raw data handler", function() {
     }
 
     let namedHashes = {
-        validCommit: "master:",
-        validTree: "master:/",
+        baseCommit: "initial:",
+        baseTree: "initial:/"
+// todo: full set of commits
     };
     let sharedDataHandler = getDataHandler();
     before(function(done) {
@@ -37,7 +35,10 @@ describe("raw data handler", function() {
             });
         });
 
-        it("should find one post", function() {});
+        it("should find one post", function() {
+            expect(entities.treenode).should.exist;
+            expect(Object.keys(entities.treenode)).to.have.length(1);
+        });
 
         it("should handle update", function(done) {
              // find entity
@@ -61,6 +62,7 @@ describe("raw data handler", function() {
 
         before(function(done) {
             dh.repo.connect((err) => {
+                expect(err).should.not.exist;
                 // run initial import
                 // check expected lastCommitSynced
                 done();
@@ -88,6 +90,7 @@ describe("raw data handler", function() {
 
         before(function(done) {
             dh.connect((err) => {
+                expect(err).should.not.exist;
                 // run initial import
                 // check expected lastCommitSynced
             });
@@ -103,23 +106,5 @@ describe("raw data handler", function() {
             done();
         });
     });
-
-
-
-    // set up known hashes
-
-    before(function(done) {
-        testRepo = new GitRunnerRepo({...global.testRepoConfig, id: cuid()}, global.testRepoPath);
-        testRepo.getPathHash("master", "/", function(err, hash) {
-            expectedPostSaveTreeHash = hash;
-            done(err);
-        });
-    });
-
-    importTest(dh, function(entities) {
-    });
-
-
-    importTest(dh, validateImport, applyUpdate, () => expectedPostSaveTreeHash);
 
 });

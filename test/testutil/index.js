@@ -8,20 +8,18 @@ export function importTest(dh, validateImport, applyUpdate, expectedPostSaveTree
 
         let namedHashes = {
             validCommit: "master:",
-            validTree: "master:/",
+            validTree: "master:/"
         };
 
         before(function(done) {
-            dh.repo.connect((err) => {
-                dh.repo.updateNamedHashes(namedHashes, done);
-            });
+            dh.repo.connect(done);
         });
 
         describe("import", function() {
-            before(() => {
+            before((done) => {
                 dh.readEntitiesFromTree(namedHashes.validCommit,
                function(err, entities) {
-                   done();
+                   done(err);
                });
             });
             it("should validate", function() {
@@ -87,6 +85,7 @@ export function RepoTest(repo) {
 
         before(function(done) {
             repo.connect((err) => {
+                expect(err).to.not.exist;
                 repo.updateNamedHashes(namedHashes, done);
             });
         });
@@ -113,7 +112,7 @@ export function RepoTest(repo) {
                     expect(err).to.not.exist;
                 // todo: check values
                     done();
-                }, progressCallBack(log));
+                }, progressCallback(log));
             });
 
         });

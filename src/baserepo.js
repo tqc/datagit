@@ -1,9 +1,8 @@
-// Handles low level / standard git operations
-import fs from "fs-extra";
-import path from "path";
-import {Async as git} from "gitrunner";
+import async from "async";
+
 /**
  * @class GitRepo
+ * Base class to handle low level / standard git operations
  **/
 class GitRepo {
      /**
@@ -109,7 +108,7 @@ class GitRepo {
                    // assume this entry is already a valid hash
                    next();
                } else {
-                   getPathHash(v.substr(0, ind), v.substr(ind + 1),
+                   this.getPathHash(v.substr(0, ind), v.substr(ind + 1),
                        (err, hash) => {
                            namedHashes[k] = hash;
                            next(err);

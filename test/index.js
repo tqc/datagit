@@ -18,16 +18,6 @@ global.Mongo = Mongo;
 
 global.expect = chai.expect;
 
-global.commits = {
-    initial: "7cd4197623b4154d7ac1c37012b3a048f8fc5256"
-};
-
-global.trees = {
-    initial: "358590579df64fded36d7e81e11e7adb6d6b4616",
-    editedpost: "e57f0cba7d00c72c57ada6eb2d1dabb0d75794aa"
-};
-
-
 before(function(done) {
     console.log("set up test run");
     // allow time for git clone to run if needed
@@ -39,9 +29,8 @@ before(function(done) {
 
     if (!fs.existsSync(testRepoDir)) {
         // repo is a bare clone of git@bitbucket.org:tqc/datagit-test.git
-        // git clone --bare git@bitbucket.org:tqc/datagit-test.git repo
         git.run(testDir, {
-            params: ["clone", "--bare", "git@bitbucket.org:tqc/datagit-test.git", "repo"]
+            params: ["clone", "--bare", "git@github.com:tqc/datagit-test.git", "repo"]
         });
     }
 

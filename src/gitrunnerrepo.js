@@ -14,7 +14,7 @@ class GitRunnerRepo extends BaseRepo {
  * @param gitPathTemplate template for the path eg /basepath/:userId/:repoId
  **/
     constructor(options, gitRootTemplate) {
-        this.options = options;
+        super(options);
         this.repoPath = gitRootTemplate
             .replace(/:userId/, options.user)
             .replace(/:repoId/, options.id);
@@ -32,7 +32,7 @@ class GitRunnerRepo extends BaseRepo {
 
         // todo: should fail if key missing, but using system key is appropriate for test
         var keyPath = path.resolve(userPath, "id_rsa");
-        if (options.userSettings.privateKey && !fs.existsSync(keyPath)) {
+        if (repo.options.userSettings.privateKey && !fs.existsSync(keyPath)) {
             fs.writeFileSync(keyPath, user.privateKey, { encoding: "utf-8", mode: 0o600 });
         }
 

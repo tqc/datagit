@@ -1,5 +1,6 @@
 import {repoTest, repoFetchTest} from "./testutils";
 import cuid from "cuid";
+import path from "path";
 import {GitRunnerRepo} from "./src";
 
 describe("GitRunnerRepo", () => {
