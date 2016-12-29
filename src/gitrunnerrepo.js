@@ -1,33 +1,43 @@
 // Handles low level / standard git operations
 import fs from "fs-extra";
 import path from "path";
+import BaseRepo from "./baserepo"
 import {Async as git} from "gitrunner";
 
-class GitRepo {
-    constructor(options) {
+/**
+ * @class GitRunnerRepo
+ * @extends GitRepo
+ **/
+class GitRunnerRepo extends BaseRepo {
+/**
+ * @param options see GitRepo
+ * @param gitPathTemplate template for the path eg /basepath/:userId/:repoId
+ **/
+    constructor(options, gitRootTemplate) {
         this.options = options;
+        this.repoPath = gitRootTemplate
+            .replace(/:userId/, options.user);
+            .replace(/:repoId/, options.id);
     }
-    ensureLocalRepo(callback) {
+    ensureLocalRepo(callback, progress) {
         var repo = this;
-        var gitRoot = process.env.GIT_BASE_PATH;
-        if (!gitRoot) return callback("Git path not set");
-        var userPath = path.resolve(gitRoot, this.options.user);
-        if (!fs.existsSync(userPath)) fs.mkdirsSync(userPath);
+        var repoPath = this.repoPath;
+        if (!repoPath) return callback("Git path not set");
 
-        this.path = path.resolve(userPath, this.options.id);
+        var userPath = path.resolve(repoPath, "..");
+        
+        if (!fs.existsSync(userPath)) fs.mkdirsSync(userPath);
 
         var user = repo.options.userSettings;
 
-
-        // todo: fail if key missing
+        // todo: should fail if key missing, but using system key is appropriate for test
         var keyPath = path.resolve(userPath, "id_rsa");
-        if (!fs.existsSync(keyPath)) {
+        if (options.userSettings.privateKey && !fs.existsSync(keyPath)) {
             fs.writeFileSync(keyPath, user.privateKey, { encoding: "utf-8", mode: 0o600 });
         }
 
-
         this.spawnOptions = {
-            cwd: this.path,
+            cwd: repoPath,
             env: {
                 GIT_AUTHOR_NAME: user.name,
                 GIT_AUTHOR_EMAIL: user.email,
@@ -41,8 +51,8 @@ class GitRepo {
         };
 
         // todo: this isn't valid if git init failed - need to properly test for valid repo
-        if (fs.existsSync(repo.path)) return callback();
-        fs.mkdirsSync(repo.path);
+        if (fs.existsSync(repoPath)) return callback();
+        fs.mkdirsSync(repoPath);
         git.run(repo.spawnOptions,
             [{
                 params: (options) => ['init', '--bare']
@@ -54,7 +64,7 @@ class GitRepo {
             callback);
 
     }
-    connect(callback) {
+    connect(callback, progress) {
         console.log("Attempt setup of git repo");
 
         this.ensureLocalRepo(function(err) {
@@ -73,7 +83,7 @@ class GitRepo {
             callback(null, result, true);
         });
     }
-    fetch(callback) {
+    fetch(callback, progress) {
         var repo = this;
         console.log("Attempt fetch of git repo");
         var result = {
@@ -106,7 +116,7 @@ class GitRepo {
             callback(null, result, true);
         });
     }
-    readTree(commit, callback) {
+    readTree(commit, callback, progress) {
         var repo = this;
         git.tree(repo.spawnOptions, commit, function(err, tree) {
             console.log(commit);
@@ -115,11 +125,11 @@ class GitRepo {
             callback(err, tree);
         });
     }
-    readString(hash, callback) {
+    readString(hash, callback, progress) {
         var repo = this;
         git.show(repo.spawnOptions, hash, callback);
     }
-    readImage(hash, callback) {
+    readImage(hash, callback, progress) {
         var repo = this;
         git.show({
             ...repo.spawnOptions,
@@ -127,7 +137,7 @@ class GitRepo {
             maxBuffer: 5000 * 1024
         }, hash, callback);
     }
-    getCommitsForMerge(callback) {
+    getCommitsForMerge(callback, progress) {
         var repo = this;
         // not used directly to read tree, only for finding concestor
         var a = repo.options.lastCommitSynced;
@@ -151,7 +161,7 @@ class GitRepo {
             }
         );
     }
-    writeTextFile(s, callback) {
+    writeTextFile(s, callback, progress) {
         var repo = this;
         git.run(
             repo.spawnOptions,
@@ -178,7 +188,7 @@ class GitRepo {
         );
 
     }
-    writeTree(treeNodes, callback) {
+    writeTree(treeNodes, callback, progress) {
         var sortedNodes = treeNodes.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 
         var repo = this;
@@ -210,7 +220,7 @@ class GitRepo {
         );
 
     }
-    writeCommit(treeRef, parentCommits, message, callback) {
+    writeCommit(treeRef, parentCommits, message, callback, progress) {
         var repo = this;
 
         var params = ["commit-tree", treeRef];
@@ -242,11 +252,7 @@ class GitRepo {
         );
 
     }
-
-    commit() {
-
-    }
-    push(callback) {
+    push(callback, progress) {
         // todo: check that branches to be pushed are valid
         // todo: handle rejected push
         var repo = this;
@@ -277,6 +283,10 @@ class GitRepo {
             }
         );
     }
+    // used for testing
+    getPathHash(ref, path, callback) {
+        callback("Not Implemented");    
+    }    
 }
 
-export default GitRepo;
+export default GitRunnerRepo;

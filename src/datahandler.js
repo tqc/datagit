@@ -2,12 +2,19 @@ import GitRepo from "./repo";
 import async from "async";
 
 class DataHandler {
-    constructor(repoSettings, db, entities) {
+    constructor(repoSettings, db, entityClasses) {
         // later the repo implementation class could be passed in as a parameter
         // to allow alternate implementations
         this.repo = new GitRepo(repoSettings);
-        this.entities = entities;
+        this.entity = entities;
+        this.entityHandlers = {};
+        // default list of entities valid at root level
+        this.allEntityKeys = {};
         this.db = db;
+        for (let e of entityClasses) {
+            this.entityHandlers[e.key] = new e(this);
+            allEntityKeys.push(e.key);
+        }
     }
     connect(callback) {
         this.repo.connect(callback);
@@ -18,7 +25,7 @@ class DataHandler {
         var result = {
             source: commit
         };
-        for (let i = 0; i < this.entities.length; i++) {
+        for (let i = 0; i < this.allEntityKeys.length; i++) {
             result[this.entities[i].key] = {};
         }
 
@@ -255,15 +262,17 @@ class DataHandler {
     merge(lastCommitSynced, dbEntities, remoteCommit) {
 
     }
-    processTreeNode(treeNode, parentEntity, expectedEntities, handleFoundEntity, done) {
+    // read all entities from a given tree node 
+    processTreeNode(treeNode, parentEntity, expectedEntityKeys, handleFoundEntity, done) {
         var dh = this;
         var unclaimedNodes = Object.keys(treeNode.contents);
         async.eachSeries(
-            expectedEntities,
-            function(entity, next) {
+            expectedEntityKeys || this.allEntityKeys,
+            function(entityKey, next) {
                 // iterate files
+                let entity = this.entityHandlers[entityKey];
                 console.log("Looking for " + entity.key);
-                entity.process(dh, parentEntity, treeNode,
+                entity.readEntitiesFromTree(parentEntity, treeNode,
                     unclaimedNodes,
                     handleFoundEntity,
                     function(err, remainingNodes) {

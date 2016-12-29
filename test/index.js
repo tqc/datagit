@@ -1,10 +1,11 @@
-//import "./file";
-//import "./blog";
+import "./repo";
+import "./raw";
 
 
 import fs from "fs-extra";
 import path from "path";
 import Mongo from "mongo-mock";
+import cuid from "cuid";
 
 import * as DB from "../examples/db";
 //import {TestRepo} from "../examples/raw";
@@ -47,84 +48,26 @@ before(function(done) {
 
     DB.open({}, function(err, db) {
         if (err) throw err;
-/*
-        db.Stores.add({
-        });
-*/
-/*
-        var testId1 = DB.generateUUID();
-        var storeConfig1 = {
-            id: testId1,
-            cloneUrl: path.resolve(testDir, "repo"),
-            path: path.resolve(testDir, testId1),
-            branch: "master",
-            lastSyncedCommit: undefined
+
+        global.testRepoConfig = {
+            id: cuid(),
+            user: testUserId,
+		      remoteUrl: "git@bitbucket.org:tqc/datagittest.git",
+            userSettings = {
+                name: "Test User",
+                email: "testuser@example.com",
+                privateKey: undefined
+            };
         };
-
-
-        var testId2 = DB.generateUUID();
-        var storeConfig2 = {
-            id: testId2,
-            cloneUrl: path.resolve(testDir, "repo"),
-            path: path.resolve(testDir, testId2),
-            branch: "master",
-            lastSyncedCommit: undefined
-        };
-*/
-
-
-       // global.testRepo = new TestRepo(storeConfig1, db, git);
-       // global.blogRepo = new BlogRepo(storeConfig2, db, git);
-
-
-        // this just creates a link to the repo which may or may not already exist
-        // if the folder does not exist, it is created with git init.
-        // if (!git.repoExists(path)) git.init(path)
-        // git.setRemote("origin", testRepoDir);
-        // git.fetch(origin);
-
-        // git.reset("")
-
-        // db contains any files previously loaded, under a store object which includes
-        // the last synced commit id - undefined for a new repo.
-
-        // can create a file at this point
-        // db.Files.add({storeId: global.TestId, name:"foo.txt", contents: "Text here"});
-        // repo.Sync()
-        // this will write all changed files and generate a new commit
-
-        // or reset to a remote branch
-        // repo.resetToCommit("origin/master")
-        // this deletes the db objects, runs git reset --hard and recreates all the db objects.
-
-        // should the working tree exist?
-        // probably best that it doesn't to simplify renaming etc
-        // can still avoid loading files completely into db by using git hashes rather
-        // than filenames - eg
-        //    {
-        //      fileId: dbid,
-        //      title: "file name",
-        //      files: [{
-        //          commitPath: "/folder/file.txt",
-        //          commitHash: "0123456789abcdef0123",
-        //          currentHash: "0123456789abcdef0123"
-        //          }]
-        //    }
-        // A db change can either write the file to git immediately, updating the hash,
-        // or clear the hash so it will be written and recalculated on sync.
-        //
-        // Changes need to be tracked so that a complete traverse is not
-        // needed to create a commit.
-        // files do not necessarily store parentId.
-        // write commit path to a changes list. This can also be derived by
-        // searching for currentHash != commitHash
-        // expand changes list, use to skip unchanged objects.
-
-        //global.testRepo.ensureCreated();
-        // create a working tree
+        
+        global.testRepoPath = path.resolve(testDir, repo);
+        
         done();
     });
 });
+
+
+
 
 after(function(done) {
     console.log("end test run");
