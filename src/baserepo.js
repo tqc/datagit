@@ -100,12 +100,12 @@ class GitRepo {
      **/
     updateNamedHashes(namedHashes, done) {
         async.each(Object.keys(namedHashes),
-           (k, next) => {
-               this.getPathHash(namedHashes[k],
-                   (err, hash) => {
-                       namedHashes[k] = hash;
-                       next(err);
-               });
+            (k, next) => {
+                this.getPathHash(namedHashes[k],
+                (err, hash) => {
+                    namedHashes[k] = hash;
+                    next(err);
+                });
            },
            (err) => {
                done(err, namedHashes);

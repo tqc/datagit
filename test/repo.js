@@ -5,16 +5,16 @@ import {GitRunnerRepo} from "../src";
 
 describe("GitRunnerRepo", () => {
     var sharedRepo, newRepo;
-    before(()=>{
-        let sharedRepo = new GitRunnerRepo(
+    before(() => {
+        sharedRepo = new GitRunnerRepo(
             {...global.testRepoSettings, id: cuid()},
             global.testRepoPath
             );
-        let newRepo = new GitRunnerRepo(
+        newRepo = new GitRunnerRepo(
             {...global.testRepo.options, id: cuid()},
             path.resolve(__dirname, "../build/test/:repoId")
             );
-     });
+    });
 
     repoTest(() => sharedRepo);
 
