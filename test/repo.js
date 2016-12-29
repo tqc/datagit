@@ -7,11 +7,11 @@ describe("GitRunnerRepo", () => {
     var sharedRepo, newRepo;
     before(() => {
         sharedRepo = new GitRunnerRepo(
-            {...global.testRepoSettings, id: cuid()},
+            {...global.testRepoConfig, id: cuid()},
             global.testRepoPath
             );
         newRepo = new GitRunnerRepo(
-            {...global.testRepoSettings, id: cuid()},
+            {...global.testRepoConfig, id: cuid()},
             path.resolve(__dirname, "../build/test/:repoId")
             );
     });
