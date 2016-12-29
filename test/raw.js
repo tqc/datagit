@@ -12,8 +12,8 @@ describe("raw data handler", function() {
     }
 
     let namedHashes = {
-        baseCommit: "initial:",
-        baseTree: "initial:/"
+        baseCommit: "initial",
+        baseTree: "initial:"
 // todo: full set of commits
     };
     let sharedDataHandler;

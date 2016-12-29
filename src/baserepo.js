@@ -90,10 +90,9 @@ class GitRepo {
     }
     /**
      * Get the object hash at a given path. Mostly used for testing
-     * @param ref Branch, tag or commit reference
-     * @param path File path. "/" for root tree, "" for commit.
+     * @param refPath see git rev-parse. "master" for commit. "master:" for root tree, "master:README.md" for blob.
      **/
-    getPathHash(ref, path, callback) {
+    getPathHash(refPath, callback) {
         callback("Not Implemented");
     }
     /**
@@ -102,19 +101,11 @@ class GitRepo {
     updateNamedHashes(namedHashes, done) {
         async.each(Object.keys(namedHashes),
            (k, next) => {
-               let v = namedHashes[k];
-               let ind = v.indexOf(":");
-               if (ind < 0) {
-                   // assume this entry is already a valid hash
-                   next();
-               } else {
-                   this.getPathHash(v.substr(0, ind), v.substr(ind + 1),
-                       (err, hash) => {
-                           namedHashes[k] = hash;
-                           next(err);
-                       }
-                   );
-               }
+               this.getPathHash(namedHashes[k],
+                   (err, hash) => {
+                       namedHashes[k] = hash;
+                       next(err);
+               });
            },
            (err) => {
                done(err, namedHashes);

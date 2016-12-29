@@ -284,8 +284,10 @@ class GitRunnerRepo extends BaseRepo {
         );
     }
     // used for testing
-    getPathHash(ref, path, callback) {
-        callback("Not Implemented");
+    getPathHash(refPath, callback) {
+        git.revParse(repo.spawnOptions, refPath, function(err, hash) {
+            callback(err, hash);
+        });
     }
 }
 

@@ -7,8 +7,8 @@ export function importTest(dh, validateImport, applyUpdate, expectedPostSaveTree
 
 
         let namedHashes = {
-            validCommit: "master:",
-            validTree: "master:/"
+            validCommit: "master",
+            validTree: "master:"
         };
 
         before(function(done) {
@@ -69,8 +69,9 @@ function progressCallback(logArray) {
 
 // test lower level git functions for a repo implementation
 // assumes an existing synced git repo
-export function RepoTest(repo) {
+export function RepoTest(getRepo) {
     describe("low level repo operations", function() {
+        var repo;
         let namedHashes = {
             validCommit: "master:",
             validTree: "master:/",
@@ -84,6 +85,7 @@ export function RepoTest(repo) {
         };
 
         before(function(done) {
+            repo = getRepo();
             repo.connect((err) => {
                 expect(err).to.not.exist;
                 repo.updateNamedHashes(namedHashes, done);
@@ -93,9 +95,9 @@ export function RepoTest(repo) {
         describe("get path hash", function() {
 
             it("should get hash", function(done) {
-                repo.getPathHash("master:/", function(err, hash) {
+                repo.getPathHash("initial:", function(err, hash) {
                     expect(err).to.not.exist;
-                    expect(hash).to.equal("todo:find hash");
+                    expect(hash).to.equal("358590579df64fded36d7e81e11e7adb6d6b4616");
                     done();
                 });
             });
@@ -224,9 +226,10 @@ export function RepoTest(repo) {
 
 // test lower level git functions for a repo implementation
 // integration tests that test fetch/push functionality
-export function RemoteRepoTest(repo) {
+export function RemoteRepoTest(getRepo) {
     describe("repo remote ops integration test", function() {
         before(function() {
+            repo = getRepo();
             // run connect
         });
 
