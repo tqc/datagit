@@ -138,7 +138,7 @@ class GitRunnerRepo extends BaseRepo {
             maxBuffer: 5000 * 1024
         }, hash, callback);
     }
-    getCommitsForMerge(localRef, remoteRef, progress) {
+    getCommitsForMerge(localRef, remoteRef, callback, progress) {
         var repo = this;
         // not used directly to read tree, only for finding concestor
         var a = localRef;

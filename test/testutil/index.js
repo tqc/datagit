@@ -180,7 +180,7 @@ export function repoTest(getRepo) {
         describe("write text file", function() {
 
             it("should write file", function(done) {
-                repo.writeTextFile("Contents of test file", function(err, hash) {
+                repo.writeTextFile("# Test file\n\nThis is a file in a folder.", function(err, hash) {
                     expect(err).to.not.exist;
                     expect(hash).to.equal(namedHashes.textFile);
                     done();
@@ -195,8 +195,10 @@ export function repoTest(getRepo) {
             it("should write simple tree", function(done) {
                 let treeNodes = [
                     {
-                        name: "file.txt",
-                        sha: namedHashes.fileInFolder
+                        type: "blob",
+                        permissions: "100644",
+                        name: "file.md",
+                        hash: namedHashes.fileInFolder
                     }
                 ];
                 repo.writeTree(treeNodes, function(err, hash) {
