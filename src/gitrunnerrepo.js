@@ -191,7 +191,7 @@ class GitRunnerRepo extends BaseRepo {
     }
     writeTree(treeNodes, callback, progress) {
         var sortedNodes = treeNodes.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
-
+        console.log(sortedNodes);
         var repo = this;
         git.run(
             repo.spawnOptions,
@@ -288,6 +288,9 @@ class GitRunnerRepo extends BaseRepo {
     getPathHash(refPath, callback) {
         var repo = this;
         git.revParse(repo.spawnOptions, refPath, function(err, hash) {
+            console.log(refPath);
+            console.log(err);
+            console.log(hash);
             callback(err, hash);
         });
     }

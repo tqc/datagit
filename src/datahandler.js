@@ -8,8 +8,9 @@ class DataHandler {
         this.allEntityKeys = [];
         this.db = db;
         for (let e of entityClasses) {
-            this.entityHandlers[e.key] = new e(this);
-            this.allEntityKeys.push(e.key);
+            let handler = new e(this);
+            this.entityHandlers[handler.key] = handler;
+            this.allEntityKeys.push(handler.key);
         }
     }
     connect(callback) {
@@ -17,19 +18,20 @@ class DataHandler {
     }
     readFullEntitiesFromCommit(ref, callback) {
         this.readEntitiesFromTree(ref, (err, entities) => {
+            if (err) callback(err);
             async.each(
-                this.allEntityKeys, 
+                this.allEntityKeys,
                 (ek, nextType) => {
                     let handler = this.entityHandlers[ek];
                     async.each(
-                        Object.keys(entities[ek]), 
+                        Object.keys(entities[ek]),
                         (id, nextEntity) => {
                             handler.populateFromGit(entities, entities[ek][id], nextEntity);
-                        }, 
+                        },
                         nextType
-                    );                    
-                }, 
-                (err) => callback(err, entities);
+                    );
+                },
+                (err) => callback(err, entities)
             );
         });
     }
@@ -40,26 +42,23 @@ class DataHandler {
             source: commit
         };
         for (let i = 0; i < this.allEntityKeys.length; i++) {
-            result[this.entities[i].key] = {};
+            result[this.allEntityKeys[i]] = {};
         }
 
         if (!commit) {
             callback(null, result, true);
             return;
         }
-        result.message = "Reading Tree";
-        dh.repo.readTree(dh.repo.options.remoteCommit, function(err, tree) {
+        dh.repo.readTree(commit, function(err, tree) {
             if (err) return callback(err);
             // console.log(tree);
             dh.processTreeNode(
                 tree,
                 null,
-                dh.entities,
+                dh.allEntityKeys,
                 function(type, data) {
                     // console.log("Found entity of type " + type);
-                    result.message = "Found " + type;
                     result[type][data.id] = data;
-                    callback(null, result, false);
                 },
                 function(err) {
                     callback(err, result, true);

@@ -2,55 +2,39 @@ import cuid from "cuid";
 import async from "async";
 import Syncable from "./syncable";
 
-function removeIdUnderscore(o) {
-    if (o._id) {
-        o.id = o._id;
-        delete o._id;
-    }
-    return o;
-}
-
-function addIdUnderscore(o) {
-    if (o.id) {
-        o._id = o.id;
-        delete o.id;
-    }
-    return o;
-}
-
 export default class TreeNodeHandler extends Syncable {
-    constructor() {
-        super();
-        this.key = "treenode";
+    key = "treenode";
+    isClaimedNode(n) {
+        return true;
     }
-    process(dataHandler, parentEntity, treeNode, unclaimedNodes, handleFoundEntity, callback) {
-        for (var i = 0; i < unclaimedNodes.length; i++) {
-            var n = treeNode.contents[unclaimedNodes[i]];
-            var e = Object.assign({},
-                {
-                    id: cuid(),
-                    repo: dataHandler.repo.options.id,
-                    user: dataHandler.repo.options.user
-                },
+    readEntityFromNode(n, parentEntity, handleFoundEntity, callback) {
+        var e = Object.assign({},
+            {
+                id: cuid(),
+                repo: this.dataHandler.repo.options.id,
+                user: this.dataHandler.repo.options.user
+            },
                 n);
-            if (parentEntity) e.parent = parentEntity.id;
-            delete e.contents;
-            if (parentEntity) e.parentEntity = parentEntity.id;
-            handleFoundEntity("treenode", e);
-        }
-        callback(null, []);
+        if (parentEntity) e.parent = parentEntity.id;
+        delete e.contents;
+        if (parentEntity) e.parentEntity = parentEntity.id;
+        handleFoundEntity("treenode", e);
+        callback();
     }
     loadFromDb(dataHandler, handleFoundEntity, callback) {
         dataHandler.db.TreeNodes.find({
             repo: dataHandler.repo.options.id,
             user: dataHandler.repo.options.user
-        }).each(function(err, item) {
+        }).each((err, item) => {
             if (err || !item) return callback(err, item);
-            handleFoundEntity("treenode", removeIdUnderscore(item));
+            handleFoundEntity("treenode", this.removeIdUnderscore(item));
         });
     }
     populateFullData(dataHandler, allEntities, entity, callback) {
         callback(null, entity);
+    }
+    populateFromGit(allEntities, entity, done) {
+        done(null, entity);
     }
     merge(o, a, b, callback) {
         // all three objects will be set and populated with full data at this point.
@@ -72,7 +56,7 @@ export default class TreeNodeHandler extends Syncable {
             }
             if (op.op == "insert") {
                 batch.insert(op.d);
-                handleFoundEntity("treenode", addIdUnderscore(op.d));
+                handleFoundEntity("treenode", this.addIdUnderscore(op.d));
             }
         }
         batch.execute();

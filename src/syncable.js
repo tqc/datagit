@@ -50,8 +50,8 @@ class Syncable {
                 callback(null, remainingNodes);
             });
     }
-    loadFromDb(dataHandler, handleFoundEntity, callback) {
-        callback("Not Implemented");
+    loadFromDb(dataHandler, handleFoundEntity, done) {
+        done("loadFromDb Not Implemented for " + this.key);
     }
     // load any additional data if a full merge is required
     populateFromDb(allEntities, entity, callback) {
@@ -60,9 +60,9 @@ class Syncable {
     }
     // load full version of an entity from git. callback result
     // should correspond directly to the objects in the database.
-    populateFromGit(allEntities, entity, callback) {
+    populateFromGit(allEntities, entity, done) {
         // this one must be implemented to avoid saving all the git metadata to the db
-        callback("Not Implemented");
+        done("populateFromGit Not Implemented for " + this.key);
     }
     populateFullData(allEntities, entity, callback) {
         if (allEntities.source == "db") {
@@ -72,8 +72,8 @@ class Syncable {
             this.populateFromGit(allEntities, entity, callback);
         }
     }
-    merge(o, a, b, callback) {
-        callback("Not Implemented");
+    merge(o, a, b, done) {
+        done("merge Not Implemented for " + this.key);
     }
     applyDbUpdates(dataHandler, updates, existingEntities, handleFoundEntity, callback) {
         if (!updates.length) return callback();
@@ -96,8 +96,8 @@ class Syncable {
         batch.execute();
         callback();
     }
-    getTreeNodesForEntity(dh, allEntities, entity, index, callback) {
-        callback("Not Implemented");
+    getTreeNodesForEntity(dh, allEntities, entity, index, done) {
+        done("getTreeNodesForEntity Not Implemented for " + this.key);
     }
     sortBy = undefined;
     getTreeNodesForEntities(allEntities, filteredEntities, callback) {

@@ -108,6 +108,7 @@ class GitRepo {
                 });
             },
            (err) => {
+               console.log(namedHashes);
                done(err, namedHashes);
            }
        );

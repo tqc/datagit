@@ -36,9 +36,10 @@ describe("raw data handler", function() {
             });
         });
 
-        it("should find one post", function() {
+        it("should find four nodes", function() {
+            console.log(entities);
             expect(entities.treenode).to.exist;
-            expect(Object.keys(entities.treenode)).to.have.length(1);
+            expect(Object.keys(entities.treenode)).to.have.length(4);
         });
 
         it("should handle update", function(done) {

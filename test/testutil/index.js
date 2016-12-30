@@ -88,7 +88,10 @@ export function repoTest(getRepo) {
             repo = getRepo();
             repo.connect((err) => {
                 expect(err).to.not.exist;
-                repo.updateNamedHashes(namedHashes, done);
+                repo.updateNamedHashes(namedHashes, (err) => {
+                    expect(err).to.not.exist;
+                    done();
+                });
             });
         });
 
