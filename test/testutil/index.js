@@ -73,15 +73,15 @@ export function repoTest(getRepo) {
     describe("low level repo operations", function() {
         var repo;
         let namedHashes = {
-            validCommit: "master:",
-            validTree: "master:/",
+            validCommit: "master",
+            validTree: "master:",
             invalidHash: "notarealhash",
-            textFile: "master:/test.txt",
-            binaryFile: "master:/test.txt",
-            modifiedCommit: "modified:",
-            unrelatedCommit: "samples:",
-            simpleFolder: "master:/folder",
-            fileInFolder: "master:/folder/file.txt"
+            textFile: "master:folder/file.md",
+            binaryFile: "master:folder/file.md",
+            modifiedCommit: "modified",
+            unrelatedCommit: "samples",
+            simpleFolder: "master:folder",
+            fileInFolder: "master:folder/file.md"
         };
 
         before(function(done) {
