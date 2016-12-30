@@ -287,12 +287,7 @@ class GitRunnerRepo extends BaseRepo {
     // used for testing
     getPathHash(refPath, callback) {
         var repo = this;
-        git.revParse(repo.spawnOptions, refPath, function(err, hash) {
-            console.log(refPath);
-            console.log(err);
-            console.log(hash);
-            callback(err, hash);
-        });
+        git.revParse(repo.spawnOptions, refPath, callback);
     }
 }
 

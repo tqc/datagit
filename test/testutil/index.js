@@ -75,11 +75,11 @@ export function repoTest(getRepo) {
         let namedHashes = {
             validCommit: "master",
             validTree: "master:",
-            invalidHash: "notarealhash",
+//            invalidHash: "notarealhash",
             textFile: "master:folder/file.md",
             binaryFile: "master:folder/file.md",
-            modifiedCommit: "modified",
-            unrelatedCommit: "samples",
+//            modifiedCommit: "modified",
+//            unrelatedCommit: "samples",
             simpleFolder: "master:folder",
             fileInFolder: "master:folder/file.md"
         };
@@ -103,6 +103,11 @@ export function repoTest(getRepo) {
                     expect(hash).to.equal("358590579df64fded36d7e81e11e7adb6d6b4616");
                     done();
                 });
+            });
+
+            it("should get multiple hashes", function(done) {
+                expect(namedHashes.fileInFolder).to.equal("75fae233a21f2f133e288727e83a13e99057cd97");
+                done();
             });
 
         });
