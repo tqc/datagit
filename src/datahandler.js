@@ -15,6 +15,24 @@ class DataHandler {
     connect(callback) {
         this.repo.connect(callback);
     }
+    readFullEntitiesFromCommit(ref, callback) {
+        this.readEntitiesFromTree(ref, (err, entities) => {
+            async.each(
+                this.allEntityKeys, 
+                (ek, nextType) => {
+                    let handler = this.entityHandlers[ek];
+                    async.each(
+                        Object.keys(entities[ek]), 
+                        (id, nextEntity) => {
+                            handler.populateFromGit(entities, entities[ek][id], nextEntity);
+                        }, 
+                        nextType
+                    );                    
+                }, 
+                (err) => callback(err, entities);
+            );
+        });
+    }
     readEntitiesFromTree(commit, callback) {
         var dh = this;
         console.log("Read from tree");
