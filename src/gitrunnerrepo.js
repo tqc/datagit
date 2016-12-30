@@ -32,6 +32,7 @@ class GitRunnerRepo extends BaseRepo {
 
         // todo: should fail if key missing, but using system key is appropriate for test
         var keyPath = path.resolve(userPath, "id_rsa");
+        let kp = repo.options.userSettings.privateKey ? " -i " + keyPath : "";
         if (repo.options.userSettings.privateKey && !fs.existsSync(keyPath)) {
             fs.writeFileSync(keyPath, user.privateKey, { encoding: "utf-8", mode: 0o600 });
         }
@@ -46,7 +47,7 @@ class GitRunnerRepo extends BaseRepo {
                 // avoid prompt for host key
                 // use user specific client key
                 // ignore any system config file
-                GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no -i " + keyPath + " -F /dev/null"
+                GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no" + kp + " -F /dev/null"
             }
         };
 
