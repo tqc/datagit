@@ -1,4 +1,4 @@
-import {repoTest, remoteRepoTest} from "./testutil";
+import {repoTest, remoteRepoTest} from "./testutil/repo";
 import cuid from "cuid";
 import path from "path";
 import {GitRunnerRepo} from "../src";
