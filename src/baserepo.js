@@ -30,6 +30,11 @@ class GitRepo {
     fetch(callback, progress) {
         callback("Not Implemented");
     }
+
+    readCommit(hash, callback) {
+        callback("Not Implemented");
+    }
+
     /**
      * get a full tree structure for the given commit
      **/

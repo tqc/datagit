@@ -56,8 +56,10 @@ class DataHandler {
                 tree,
                 null,
                 dh.allEntityKeys,
+                result,
                 function(type, data) {
                     // console.log("Found entity of type " + type);
+                    data.type = data.type || type;
                     result[type][data.id] = data;
                 },
                 function(err) {
@@ -72,17 +74,17 @@ class DataHandler {
         var result = {
             source: "db"
         };
-        for (let i = 0; i < this.entities.length; i++) {
-            result[this.entities[i].key] = {};
+        for (let i = 0; i < this.allEntityKeys.length; i++) {
+            result[this.allEntityKeys[i]] = {};
         }
         result.message = "Reading from db";
 
         async.eachSeries(
-            dh.entities,
+            dh.entityHandlers,
             function(entity, next) {
                 // iterate files
                 console.log("Looking for " + entity.key);
-                entity.loadFromDb(dh,
+                entity.loadFromDb(
                     function(type, data) {
                         // console.log("Found entity of type " + type);
                         result.message = "Found " + type;
@@ -111,13 +113,14 @@ class DataHandler {
         // tree nodes to be added to the parent e
         var treeNodes = [];
         async.eachSeries(
-            dh.entities,
+            dh.entityHandlers,
             function(entity, nextType) {
                 // iterate files
+                console.log("Looking for " + entity.key);
                 var parentKey = entity.parentKey || "parent";
                 var allKeys = Object.keys(allEntities[entity.key]);
                 var filteredKeys = allKeys.filter(k => allEntities[entity.key][k][parentKey] == parentId);
-                entity.getTreeNodesForEntities(dh, allEntities, filteredKeys.map(k => allEntities[entity.key][k]), function(err, arr) {
+                entity.getTreeNodesForEntities(allEntities, filteredKeys.map(k => allEntities[entity.key][k]), function(err, arr) {
                     if (err) return callback(err);
                     treeNodes.push.apply(treeNodes, arr);
                     nextType();
@@ -132,26 +135,25 @@ class DataHandler {
     }
     commitEntities(dbEntities, parentCommits, message, callback) {
         var dh = this;
-
-        this.getTreeNodesForEntities(dbEntities, null, function(err, arr) {
+        dh.repo.readCommit(parentCommits[0], function(err, parentCommit) {
             if (err) return callback(err);
-            console.log(arr);
-
-            dh.repo.writeTree(arr, function(err, hash) {
+            dh.getTreeNodesForEntities(dbEntities, null, function(err, arr) {
                 if (err) return callback(err);
+                console.log(arr);
 
-                dh.repo.writeCommit(hash, parentCommits, message, function(err, commitHash) {
+                dh.repo.writeTree(arr, function(err, hash) {
                     if (err) return callback(err);
-                    callback(null, commitHash);
+                    if (parentCommits.length == 1 && hash == parentCommit.treeRef) {
+                        // nothing to commit
+                        return callback(null);
+                    }
+                    dh.repo.writeCommit(hash, parentCommits, message, function(err, commitHash) {
+                        if (err) return callback(err);
+                        callback(null, commitHash);
+                    });
                 });
-
-
             });
-
-            // todo: write root tree / commit
-            callback(null);
         });
-
     }
     mergeEntities(concestorEntities, dbEntities, remoteEntities, callback) {
         var dh = this;
@@ -159,13 +161,13 @@ class DataHandler {
         // none of the ids will match.
 
         var result = {};
-        for (let i = 0; i < this.entities.length; i++) {
-            result[this.entities[i].key] = [];
+        for (let i = 0; i < this.allEntityKeys.length; i++) {
+            result[this.allEntityKeys[i]] = [];
         }
 
 
         async.eachSeries(
-            dh.entities,
+            dh.entityHandlers,
             function(entity, nextType) {
                 console.log("Merging " + entity.key);
                 let ok = new Set(Object.keys(concestorEntities[entity.key]));
@@ -198,7 +200,7 @@ class DataHandler {
                         }
                         else if (!o && !a && b) {
                             // new item in git - load from file and add an insert op
-                            entity.populateFullData(dh, remoteEntities, b, function(err, d) {
+                            entity.populateFullData(remoteEntities, b, function(err, d) {
                                 if (err) return nextKey(err);
                                 //console.log(d);
                                 result[entity.key].push({
@@ -276,7 +278,7 @@ class DataHandler {
 
     }
     // read all entities from a given tree node
-    processTreeNode(treeNode, parentEntity, expectedEntityKeys, handleFoundEntity, done) {
+    processTreeNode(treeNode, parentEntity, expectedEntityKeys, foundEntities, handleFoundEntity, done) {
         var dh = this;
         var unclaimedNodes = Object.keys(treeNode.contents);
         async.eachSeries(
@@ -284,9 +286,10 @@ class DataHandler {
             function(entityKey, next) {
                 // iterate files
                 let entity = dh.entityHandlers[entityKey];
-                console.log("Looking for " + entity.key);
+                console.log("Looking for " + entity.key +" in tree");
                 entity.readEntitiesFromTree(parentEntity, treeNode,
                     unclaimedNodes,
+                    foundEntities,
                     handleFoundEntity,
                     function(err, remainingNodes) {
                         if (err) return next(err);
@@ -307,12 +310,11 @@ class DataHandler {
     applyDbUpdates(updates, existingEntities, handleFoundEntity, done) {
         var dh = this;
         async.eachSeries(
-            dh.entities,
+            dh.entityHandlers,
             function(entity, next) {
                 // iterate files
                 console.log("Updating db for " + entity.key);
                 entity.applyDbUpdates(
-                    dh,
                     updates[entity.key],
                     existingEntities,
                     handleFoundEntity,

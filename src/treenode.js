@@ -1,5 +1,4 @@
 import cuid from "cuid";
-import async from "async";
 import Syncable from "./syncable";
 
 export default class TreeNodeHandler extends Syncable {
@@ -7,7 +6,7 @@ export default class TreeNodeHandler extends Syncable {
     isClaimedNode(n) {
         return true;
     }
-    readEntityFromNode(n, parentEntity, handleFoundEntity, callback) {
+    readEntityFromNode(n, parentEntity, foundEntities, handleFoundEntity, callback) {
         var e = Object.assign({},
             {
                 id: cuid(),
@@ -21,7 +20,8 @@ export default class TreeNodeHandler extends Syncable {
         handleFoundEntity("treenode", e);
         callback();
     }
-    loadFromDb(dataHandler, handleFoundEntity, callback) {
+    loadFromDb(handleFoundEntity, callback) {
+        let {dataHandler} = this;
         dataHandler.db.TreeNodes.find({
             repo: dataHandler.repo.options.id,
             user: dataHandler.repo.options.user
@@ -30,7 +30,7 @@ export default class TreeNodeHandler extends Syncable {
             handleFoundEntity("treenode", this.removeIdUnderscore(item));
         });
     }
-    populateFullData(dataHandler, allEntities, entity, callback) {
+    populateFullData(allEntities, entity, callback) {
         callback(null, entity);
     }
     populateFromGit(allEntities, entity, done) {
@@ -41,7 +41,8 @@ export default class TreeNodeHandler extends Syncable {
         var changedFields = {};
         callback(null, changedFields);
     }
-    applyDbUpdates(dataHandler, updates, existingEntities, handleFoundEntity, callback) {
+    applyDbUpdates(updates, existingEntities, handleFoundEntity, callback) {
+        let {dataHandler} = this;
         if (!updates.length) return callback();
         var batch = dataHandler.db.TreeNodes.initializeUnorderedBulkOp();
 
@@ -62,7 +63,7 @@ export default class TreeNodeHandler extends Syncable {
         batch.execute();
         callback();
     }
-    getTreeNodesForEntity(dh, allEntities, entity, index, callback) {
+    getTreeNodesForEntity(allEntities, entity, index, callback) {
         var treeNodes = [];
 
         // treenode is always a leaf, and entity is usable directly
@@ -76,23 +77,5 @@ export default class TreeNodeHandler extends Syncable {
         });
 
         callback(null, treeNodes);
-    }
-    getTreeNodesForEntities(dh, allEntities, filteredEntities, callback) {
-        var tnh = this;
-        var treeNodes = [];
-        async.eachOfSeries(
-            filteredEntities,
-            function(o, i, next) {
-                tnh.getTreeNodesForEntity(dh, allEntities, o, i, function(err, arr) {
-                    if (err) return callback(err);
-                    treeNodes.push.apply(treeNodes, arr);
-                    next();
-                });
-            },
-            function(err) {
-                if (err) return callback(err);
-                callback(null, treeNodes);
-            }
-        );
     }
 }

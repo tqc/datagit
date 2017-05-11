@@ -21,28 +21,28 @@ class Syncable {
         return o;
     }
 
-    isClaimedNode(n) {
+    isClaimedNode(n, parentEntity, foundEntities) {
         return false;
     }
     // assuming claimedNode returned true, process the node
     // assumes no need for access to other nodes in parent folder
     // if that is needed, override process directly.
-    readEntityFromNode(n, parentEntity, handleFoundEntity, done) {
+    readEntityFromNode(n, parentEntity, foundEntities, handleFoundEntity, done) {
         done("readEntityFromNode Not Implemented for " + this.key);
     }
     // formerly known as process
-    readEntitiesFromTree(parentEntity, treeNode, unclaimedNodes, handleFoundEntity, callback) {
+    readEntitiesFromTree(parentEntity, treeNode, unclaimedNodes, foundEntities, handleFoundEntity, callback) {
         var remainingNodes = [];
         async.eachSeries(
             unclaimedNodes,
             (k, next) => {
                 var n = treeNode.contents[k];
-                if (this.isClaimedNode(n)) {
-                    this.readEntityFromNode(n, parentEntity, handleFoundEntity, next);
+                if (this.isClaimedNode(n, parentEntity, foundEntities)) {
+                    this.readEntityFromNode(n, parentEntity, foundEntities, handleFoundEntity, next);
                 }
                 else {
                     remainingNodes.push(k);
-                    next();
+                    global.setTimeout(next, 0);
                 }
             },
             function(err) {
@@ -50,7 +50,7 @@ class Syncable {
                 callback(null, remainingNodes);
             });
     }
-    loadFromDb(dataHandler, handleFoundEntity, done) {
+    loadFromDb(handleFoundEntity, done) {
         done("loadFromDb Not Implemented for " + this.key);
     }
     // load any additional data if a full merge is required
@@ -75,12 +75,19 @@ class Syncable {
     merge(o, a, b, done) {
         done("merge Not Implemented for " + this.key);
     }
-    applyDbUpdates(dataHandler, updates, existingEntities, handleFoundEntity, callback) {
+    applyDbUpdates(updates, existingEntities, handleFoundEntity, callback) {
+        let {dataHandler} = this;
         if (!updates.length) return callback();
         var batch = dataHandler.db[this.dbCollection].initializeUnorderedBulkOp();
 
         for (let i = 0; i < updates.length; i++) {
             var op = updates[i];
+            if (op.d) {
+                // avoid saving metadata
+                op.d = {...op.d};
+                delete op.d.type;
+                delete op.d.treeNode;
+            }
             if (op.op == "delete") {
                 batch.find({_id: op.id}).removeOne();
             }
@@ -96,7 +103,7 @@ class Syncable {
         batch.execute();
         callback();
     }
-    getTreeNodesForEntity(dh, allEntities, entity, index, done) {
+    getTreeNodesForEntity(allEntities, entity, index, done) {
         done("getTreeNodesForEntity Not Implemented for " + this.key);
     }
     sortBy = undefined;

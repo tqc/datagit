@@ -101,7 +101,7 @@ class GitRunnerRepo extends BaseRepo {
             params: (options) => ['fetch', 'origin']
         },
         {
-            params: (options) => ['rev-parse', 'origin/master'],
+            params: (options) => ['rev-parse', 'origin/' + (repo.options.branch || "master")],
             process: function(res, code, output) {
                 if (code === 0) {
                     res.branch = output.substr(0, output.indexOf("\n"));
@@ -117,6 +117,42 @@ class GitRunnerRepo extends BaseRepo {
             callback(null, result, true);
         });
     }
+
+    readCommit(hash, callback) {
+
+        var showOp = {
+            params: (options, result) => ['show', '-q', "--format=raw", options.ref],
+            requireZeroExitCode: true,
+            process: function(result, code, output) {
+                // result.output = output;
+                let lines = output.split("\n");
+                let authorLine = lines.find(s => s.indexOf("author") == 0);
+                let m = /author (.*) <(.*)> (.*) (.*)/.exec(authorLine);
+
+                result.treeRef = lines.find(s => s.indexOf("tree") == 0).substr(5);
+                result.authorName = m[1];
+                result.authorEmail = m[2];
+                // todo: handle time zone properly here
+                result.date = new Date(m[3] * 1000).toISOString();
+                result.message = lines[6].substr(4);
+
+                return result;
+            }
+        };
+
+        var repo = this;
+        if (!hash) return callback(null, null);
+        git.run(repo.spawnOptions, [showOp], { ref: hash }, function(err, res) {
+            if (err) return callback(err);
+            callback(null, {
+                id: hash,
+                ...res
+            });
+        });
+
+    }
+
+
     readTree(commit, callback, progress) {
         var repo = this;
         git.tree(repo.spawnOptions, commit, function(err, tree) {
@@ -138,7 +174,7 @@ class GitRunnerRepo extends BaseRepo {
             maxBuffer: 5000 * 1024
         }, hash, callback);
     }
-    getCommitsForMerge(localRef, remoteRef, callback, progress) {
+    getCommitsForMerge(localRef, remoteRef, callback) {
         var repo = this;
         // not used directly to read tree, only for finding concestor
         var a = localRef;
@@ -261,7 +297,7 @@ class GitRunnerRepo extends BaseRepo {
         var result = {
             message: "Pushing",
             remoteCommit: repo.options.remoteCommit,
-            lastCommitSynced: repo.lastCommitSynced,
+            lastCommitSynced: repo.options.lastCommitSynced,
             remoteChanges: 1,
             localChanges: 2,
             uncommittedLocalChanges: true
