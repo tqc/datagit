@@ -5,21 +5,6 @@ class Syncable {
     constructor(dh) {
         this.dataHandler = dh;
     }
-    removeIdUnderscore(o) {
-        if (o._id) {
-            o.id = o._id;
-            delete o._id;
-        }
-        return o;
-    }
-
-    addIdUnderscore(o) {
-        if (o.id) {
-            o._id = o.id;
-            delete o.id;
-        }
-        return o;
-    }
 
     isClaimedNode(n, parentEntity, foundEntities) {
         return false;
@@ -51,8 +36,16 @@ class Syncable {
             });
     }
     loadFromDb(handleFoundEntity, done) {
-        done("loadFromDb Not Implemented for " + this.key);
+        let { dataHandler, dbCollection, key } = this;
+        dataHandler.db[dbCollection].find({
+            repo: dataHandler.repo.options.id,
+            user: dataHandler.repo.options.user
+        }).each(function(err, item) {
+            if (err || !item) return done(err, item);
+            handleFoundEntity(key, item);
+        });
     }
+
     // load any additional data if a full merge is required
     populateFromDb(allEntities, entity, callback) {
         // assume that initial load included everything
@@ -78,31 +71,30 @@ class Syncable {
     applyDbUpdates(updates, existingEntities, handleFoundEntity, callback) {
         let {dataHandler} = this;
         if (!updates.length) return callback();
-        var batch = dataHandler.db[this.dbCollection].initializeUnorderedBulkOp();
+
 
         for (let i = 0; i < updates.length; i++) {
-            var op = updates[i];
+            let op = updates[i];
             if (op.d) {
                 // avoid saving metadata
                 op.d = {...op.d};
                 delete op.d.type;
                 delete op.d.treeNode;
             }
-            if (op.op == "delete") {
-                batch.find({_id: op.id}).removeOne();
-            }
             if (op.op == "update") {
-                batch.find({_id: op.id}).updateOne({$set: op.d});
                 handleFoundEntity("story", Object.assign({}, existingEntities.treenode[op.id], op.d));
             }
             if (op.op == "insert") {
-                batch.insert(this.addIdUnderscore(op.d));
                 handleFoundEntity("story", op.d);
             }
         }
-        batch.execute();
-        callback();
+
+        let collection = dataHandler.db[this.dbCollection];
+
+        collection.applyUpdates(updates, callback);
+
     }
+
     getTreeNodesForEntity(allEntities, entity, index, done) {
         done("getTreeNodesForEntity Not Implemented for " + this.key);
     }

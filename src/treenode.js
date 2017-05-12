@@ -3,6 +3,8 @@ import Syncable from "./syncable";
 
 export default class TreeNodeHandler extends Syncable {
     key = "treenode";
+    dbCollection = "TreeNodes";
+
     isClaimedNode(n) {
         return true;
     }
@@ -20,19 +22,6 @@ export default class TreeNodeHandler extends Syncable {
         handleFoundEntity("treenode", e);
         callback();
     }
-    loadFromDb(handleFoundEntity, callback) {
-        let {dataHandler} = this;
-        dataHandler.db.TreeNodes.find({
-            repo: dataHandler.repo.options.id,
-            user: dataHandler.repo.options.user
-        }).each((err, item) => {
-            if (err || !item) return callback(err, item);
-            handleFoundEntity("treenode", this.removeIdUnderscore(item));
-        });
-    }
-    populateFullData(allEntities, entity, callback) {
-        callback(null, entity);
-    }
     populateFromGit(allEntities, entity, done) {
         done(null, entity);
     }
@@ -41,28 +30,7 @@ export default class TreeNodeHandler extends Syncable {
         var changedFields = {};
         callback(null, changedFields);
     }
-    applyDbUpdates(updates, existingEntities, handleFoundEntity, callback) {
-        let {dataHandler} = this;
-        if (!updates.length) return callback();
-        var batch = dataHandler.db.TreeNodes.initializeUnorderedBulkOp();
 
-        for (let i = 0; i < updates.length; i++) {
-            var op = updates[i];
-            if (op.op == "delete") {
-                batch.find({_id: op.id}).removeOne();
-            }
-            if (op.op == "update") {
-                batch.find({_id: op.id}).updateOne({$set: op.d});
-                handleFoundEntity("treenode", Object.assign({}, existingEntities.treenode[op.id], op.d));
-            }
-            if (op.op == "insert") {
-                batch.insert(op.d);
-                handleFoundEntity("treenode", this.addIdUnderscore(op.d));
-            }
-        }
-        batch.execute();
-        callback();
-    }
     getTreeNodesForEntity(allEntities, entity, index, callback) {
         var treeNodes = [];
 
