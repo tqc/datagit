@@ -1,6 +1,6 @@
 import cuid from "cuid";
-import {TreeNode, GitRunnerRepo, DataHandler} from "../src";
-
+import {TreeNode, DataHandler} from "../src";
+import GitRunnerRepo from "../src/gitrunnerrepo";
 describe("raw data handler", function() {
 
     function getDataHandler() {

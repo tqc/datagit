@@ -1,6 +1,6 @@
 {
   "name": "datagit",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Sync a database with a git repository",
   "author": "Tom Clarkson <tom@orangeguava.com> (http://tqclarkson.com)",
   "repository": {
@@ -27,10 +27,13 @@
     "babel-cli": "^6.7.5",
     "babel-core": "^6.7.6",
     "babel-eslint": "^6.0.2",
+    "babel-loader": "^6.4.1",
     "babel-plugin-transform-class-properties": "^6.19.0",
     "babel-plugin-transform-decorators-legacy": "^1.3.4",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.7.4",
     "babel-plugin-transform-object-rest-spread": "^6.20.2",
+    "babel-preset-es2015": "^6.18.0",
+    "babel-preset-react": "^6.24.1",
     "chai": "^3.5.0",
     "eslint": "^2.13.0",
     "eslint-config-tqc": "^1.0.6",

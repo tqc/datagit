@@ -9,15 +9,17 @@ export default class TreeNodeHandler extends Syncable {
         return true;
     }
     readEntityFromNode(n, parentEntity, foundEntities, handleFoundEntity, callback) {
-        var e = Object.assign({},
-            {
-                id: cuid(),
-                repo: this.dataHandler.repo.options.id,
-                user: this.dataHandler.repo.options.user
-            },
-                n);
+        var e = {
+            id: cuid(),
+            repo: this.dataHandler.repo.options.id,
+            user: this.dataHandler.repo.options.user,
+            gitObjectType: n.type,
+            hash: n.hash,
+            name: n.name,
+            path: n.path,
+            permissions: n.permissions
+        };
         if (parentEntity) e.parent = parentEntity.id;
-        delete e.contents;
         if (parentEntity) e.parentEntity = parentEntity.id;
         handleFoundEntity("treenode", e);
         callback();
@@ -39,7 +41,7 @@ export default class TreeNodeHandler extends Syncable {
         // treenodes are only produced by importing, so hash must already be valid
         treeNodes.push({
             permissions: entity.permissions,
-            type: entity.type,
+            type: entity.gitObjectType,
             hash: entity.hash,
             name: entity.name
         });

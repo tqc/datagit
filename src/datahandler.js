@@ -201,7 +201,10 @@ class DataHandler {
                         else if (!o && !a && b) {
                             // new item in git - load from file and add an insert op
                             entity.populateFullData(remoteEntities, b, function(err, d) {
-                                if (err) return nextKey(err);
+                                if (err) {
+                                    console.log(err);
+                                    return nextKey(err);
+                                }
                                 //console.log(d);
                                 result[entity.key].push({
                                     op: "insert",
@@ -223,7 +226,10 @@ class DataHandler {
                         else if (o && a && b && o.contentHash == a.contentHash) {
                             // db unchanged - overwrite with data from git
                             entity.populateFullData(dh, remoteEntities, b, function(err, d) {
-                                if (err) return nextKey(err);
+                                if (err) {
+                                    console.log(err);
+                                    return nextKey(err);
+                                }
                                 //console.log(d);
                                 result[entity.key].push({
                                     op: "update",
@@ -256,7 +262,6 @@ class DataHandler {
                                     });
                                 });
                             });
-                            return nextKey();
                         }
                         else {
                             throw new Error("Unhandled merge condition");
@@ -270,7 +275,7 @@ class DataHandler {
             },
             function(err) {
                 if (err) return callback(err);
-                callback(null, result);
+                global.setTimeout(() => callback(null, result), 0);
             }
         );
     }

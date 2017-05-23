@@ -1,7 +1,7 @@
 import {repoTest, remoteRepoTest} from "./testutil/repo";
 import cuid from "cuid";
 import path from "path";
-import {GitRunnerRepo} from "../src";
+import GitRunnerRepo from "../src/gitrunnerrepo";
 
 describe("GitRunnerRepo", () => {
     var sharedRepo, newRepo;
