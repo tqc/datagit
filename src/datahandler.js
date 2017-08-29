@@ -52,8 +52,15 @@ class DataHandler {
         dh.repo.readTree(commit, function(err, tree) {
             if (err) return callback(err);
             // console.log(tree);
+
+            let outerTree = {
+                contents: {
+                    ["" + ""]: tree
+                }
+            };
+
             dh.processTreeNode(
-                tree,
+                outerTree,
                 null,
                 dh.allEntityKeys,
                 result,
@@ -83,7 +90,7 @@ class DataHandler {
             dh.entityHandlers,
             function(entity, next) {
                 // iterate files
-                console.log("Looking for " + entity.key);
+                console.log("Looking for " + entity.key + " in db");
                 entity.loadFromDb(
                     function(type, data) {
                         // console.log("Found entity of type " + type);
@@ -94,6 +101,7 @@ class DataHandler {
                     },
                     function(err, remainingNodes) {
                         if (err) return next(err);
+                        console.log(Object.keys(result[entity.key]).length + " found in db");
                         next();
                     });
             },
@@ -120,7 +128,13 @@ class DataHandler {
                 var parentKey = entity.parentKey || "parent";
                 var allKeys = Object.keys(allEntities[entity.key]);
                 var filteredKeys = allKeys.filter(k => allEntities[entity.key][k][parentKey] == parentId);
-                entity.getTreeNodesForEntities(allEntities, filteredKeys.map(k => allEntities[entity.key][k]), function(err, arr) {
+                console.log("Looking for key list property " + entity.parentCollectionKey);
+                if (parentEntity && parentEntity[entity.parentCollectionKey]) {
+                    console.log("Found key list property " + entity.parentCollectionKey);
+                    filteredKeys = parentEntity[entity.parentCollectionKey];
+                }
+                console.log("Found " + filteredKeys.length + " items");
+                entity.getTreeNodesForEntities(allEntities, filteredKeys.map(k => allEntities[entity.key][k]).filter(o => !!o), function(err, arr) {
                     if (err) return callback(err);
                     treeNodes.push.apply(treeNodes, arr);
                     nextType();
@@ -160,30 +174,116 @@ class DataHandler {
         // parameters are raw results from converting a git tree
         // none of the ids will match.
 
+
+
+
         var result = {};
         for (let i = 0; i < this.allEntityKeys.length; i++) {
             result[this.allEntityKeys[i]] = [];
         }
 
+        let dbIdToConcestorId = {};
+        let concestorIdToRemoteId = {};
+        let remoteIdToConcestorId = {};
+        let concestorIdToDbId = {};
+        let remoteIdToDbId = {};
+
+        // populate mappings
+        for (let ek of dh.allEntityKeys) {
+            let entity = dh.entityHandlers[ek];
+            console.log("Merging " + entity.key);
+
+            // populate dbId to concestor id
+
+            entity.mergeMatch(dbEntities[entity.key], concestorEntities[entity.key], dbIdToConcestorId, concestorIdToDbId);
+
+            // populate concestor id to remote id
+            entity.mergeMatch(concestorEntities[entity.key], remoteEntities[entity.key], concestorIdToRemoteId, remoteIdToConcestorId);
+
+            for (let k in remoteEntities[entity.key]) {
+                remoteIdToDbId[k] = concestorIdToDbId[remoteIdToConcestorId[k] || k] || k;
+            }
+        }
+
+        // update id references in git entities to mapped values
+        for (let ek of dh.allEntityKeys) {
+            let entity = dh.entityHandlers[ek];
+            for (let ok in concestorEntities[entity.key]) {
+                let o = concestorEntities[entity.key][ok];
+                for (let k in o) {
+                    if (typeof o[k] == "string" && concestorIdToDbId[o[k]]) {
+                        o[k] = concestorIdToDbId[o[k]];
+                    }
+                    else if (Array.isArray(o[k])) {
+                        for (let i = 0; i < o[k].length; i++) {
+                            if (typeof o[k][i] == "string" && concestorIdToDbId[o[k][i]]) {
+                                o[k][i] = concestorIdToDbId[o[k][i]];
+                            }
+                        }
+                    }
+                }
+            }
+            for (let rk in remoteEntities[entity.key]) {
+                let b = remoteEntities[entity.key][rk];
+                for (let k in b) {
+                    if (typeof b[k] == "string" && remoteIdToDbId[b[k]]) {
+                        b[k] = remoteIdToDbId[b[k]];
+                    }
+                    else if (Array.isArray(b[k])) {
+                        for (let i = 0; i < b[k].length; i++) {
+                            if (typeof b[k][i] == "string" && remoteIdToDbId[b[k][i]]) {
+                                b[k][i] = remoteIdToDbId[b[k][i]];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
 
         async.eachSeries(
-            dh.entityHandlers,
-            function(entity, nextType) {
-                console.log("Merging " + entity.key);
+            dh.allEntityKeys,
+            function(entityKey, nextType) {
+                let entity = dh.entityHandlers[entityKey];
+                console.log("Merging (2)" + entity.key);
+
                 let ok = new Set(Object.keys(concestorEntities[entity.key]));
                 let ak = new Set(Object.keys(dbEntities[entity.key]));
                 let bk = new Set(Object.keys(remoteEntities[entity.key]));
-                let allKeys = Array.from(new Set([...ak, ...bk, ...ok]));
+                let allKeysSet = new Set([...ak, ...bk, ...ok]);
+
+                // remove any remote or concestor keys that appear in the mappings
+
+                console.log(allKeysSet);
+
+                for (let k of ak) {
+                    if (dbIdToConcestorId[k] && dbIdToConcestorId[k] != k) allKeysSet.delete(dbIdToConcestorId[k]);
+                }
+
+                for (let k of ok) {
+                    if (concestorIdToRemoteId[k] && concestorIdToRemoteId[k] != k) allKeysSet.delete(concestorIdToRemoteId[k]);
+                }
+                let allKeys = Array.from(allKeysSet);
+
+                console.log(allKeys);
+
+
                 async.eachSeries(
                     allKeys,
-                    function(k, nextKey) {
-                        console.log("Checking merge for " + entity.key + " " + k);
-                        let o = concestorEntities[entity.key][k];
-                        let a = dbEntities[entity.key][k];
-                        let b = remoteEntities[entity.key][k];
+                    function(id, nextKey) {
+                        console.log("Checking merge for " + entity.key + " " + id);
+                        let o = concestorEntities[entity.key][dbIdToConcestorId[id] || id];
+                        let a = dbEntities[entity.key][id];
+                        let b = remoteEntities[entity.key][concestorIdToRemoteId[dbIdToConcestorId[id] || id] || id];
 
-                        if (a && b && a.contentHash == b.contentHash) {
-                            // db and remote are the same - do nothing
+
+                        console.log(o);
+                        console.log(a);
+                        console.log(b);
+
+                        if (a && b && a.contentHash == b.contentHash && concestorEntities.source != "db") {
+                            // db and remote are the same - do nothing regardless of concestor state
+                            // both came from git (unless doing a reset), so a contentHash check is reliable
                             return nextKey();
                         }
                         else if (o && a && !b) {
@@ -221,42 +321,31 @@ class DataHandler {
                         else if (!o && a && b) {
                             // new item in both - should never happen unless the id processing
                             // breaks as a and b would not get matching ids
-                            throw new Error("Same id added twice");
+                            return nextKey("Same id added twice");
                         }
-                        else if (o && a && b && o.contentHash == a.contentHash) {
-                            // db unchanged - overwrite with data from git
-                            entity.populateFullData(dh, remoteEntities, b, function(err, d) {
-                                if (err) {
-                                    console.log(err);
-                                    return nextKey(err);
-                                }
-                                //console.log(d);
-                                result[entity.key].push({
-                                    op: "update",
-                                    id: b.id,
-                                    d: d
-                                });
-                                return nextKey();
-                            });
-                        }
-                        else if (o && a && b && o.contentHash == b.contentHash) {
+                        else if (o && a && b && o.contentHash == b.contentHash && concestorEntities.source != "db") {
                             // remote unchanged - do nothing
                             return nextKey();
                         }
-                        else if (o && a && b && o.contentHash != a.contentHash && o.contentHash != b.contentHash) {
-                            // both changed - we need to populate all three and run the custom merge code
-                            entity.populateFullData(dh, concestorEntities, o, function(err, d) {
+                        else if (o && a && b && (o.contentHash != b.contentHash || concestorEntities.source == "db")) {
+                            // if both changed - we need to populate all three and run the custom merge code
+                            // note that o == a is possible here - saving b directly would work, but this
+                            // way only changed fields get saved.
+                            entity.populateFullData(concestorEntities, o, function(err) {
                                 if (err) return nextKey(err);
-                                entity.populateFullData(dh, dbEntities, a, function(err, d) {
+                                entity.populateFullData(dbEntities, a, function(err) {
                                     if (err) return nextKey(err);
-                                    entity.populateFullData(dh, remoteEntities, b, function(err, d) {
+                                    entity.populateFullData(remoteEntities, b, function(err) {
                                         if (err) return nextKey(err);
-                                        entity.merge(o, a, b, function() {
-                                            result[entity.key].push({
-                                                op: "update",
-                                                id: b.id,
-                                                d: d
-                                            });
+                                        entity.merge(o, a, b, function(err, updates) {
+                                            if (err) return nextKey(err);
+                                            if (updates && Object.keys(updates).length > 0) {
+                                                result[entity.key].push({
+                                                    op: "update",
+                                                    id: a.id,
+                                                    d: updates
+                                                });
+                                            }
                                             return nextKey();
                                         });
                                     });
@@ -264,7 +353,7 @@ class DataHandler {
                             });
                         }
                         else {
-                            throw new Error("Unhandled merge condition");
+                            return nextKey("Unhandled merge condition");
                         }
                     },
                     function(err) {
@@ -291,7 +380,7 @@ class DataHandler {
             function(entityKey, next) {
                 // iterate files
                 let entity = dh.entityHandlers[entityKey];
-                console.log("Looking for " + entity.key +" in tree");
+                console.log("Looking for " + entity.key + " in tree");
                 entity.readEntitiesFromTree(parentEntity, treeNode,
                     unclaimedNodes,
                     foundEntities,
@@ -299,6 +388,7 @@ class DataHandler {
                     function(err, remainingNodes) {
                         if (err) return next(err);
                         unclaimedNodes = remainingNodes;
+                        console.log(Object.keys(foundEntities[entityKey]).length + " found in tree");
                         next();
                     });
             },

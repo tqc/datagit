@@ -1,5 +1,5 @@
 import cuid from "cuid";
-import {TreeNode, DataHandler} from "../src";
+import {TreeNode, RootObject, DataHandler} from "../src";
 import GitRunnerRepo from "../src/gitrunnerrepo";
 describe("raw data handler", function() {
 
@@ -7,7 +7,7 @@ describe("raw data handler", function() {
         let testRepo = new GitRunnerRepo({...global.testRepoConfig, id: cuid()}, global.testRepoPath);
         // todo: add repo to db
 
-        let dh = new DataHandler(testRepo, global.testDb, [TreeNode]);
+        let dh = new DataHandler(testRepo, global.testDb, [RootObject, TreeNode]);
         return dh;
     }
 

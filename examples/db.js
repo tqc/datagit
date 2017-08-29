@@ -19,7 +19,7 @@ exports.open = function(options, callback) {
         exports.db = db;
         exports.Users = db.collection("Users");
         exports.Repos = db.collection("Repos");
-        exports.Posts = db.collection("Books");
+        exports.Posts = db.collection("Posts");
         exports.TreeNodes = db.collection("TreeNodes");
         callback(null, db);
     });

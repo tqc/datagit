@@ -212,7 +212,7 @@ class GitRunnerRepo extends BaseRepo {
                 process: function(result, code, output) {
                     if (code != 0) {
                         console.log(output);
-                        throw new Error("Unexpected exit code " + code);
+                        throw new Error("Unexpected exit code from writeTextFile " + code);
                     }
                     result.fileRef = output.substr(0, output.indexOf("\n"));
                 }
@@ -237,14 +237,16 @@ class GitRunnerRepo extends BaseRepo {
                     stdin.setEncoding("utf-8");
                     for (var i = 0; i < sortedNodes.length; i++) {
                         var n = sortedNodes[i];
-                        stdin.write(n.permissions + " " + n.type + " " + n.hash + "\t" + n.name + "\n");
+                        let line = n.permissions + " " + n.type + " " + n.hash + "\t" + n.name + "\n";
+                        console.log(line);
+                        stdin.write(line);
                     }
                     stdin.end();
                 },
                 process: function(result, code, output) {
                     if (code != 0) {
                         console.log(output);
-                        throw new Error("Unexpected exit code " + code);
+                        throw new Error("Unexpected exit code from writeTree " + code);
                     }
                     result.treeRef = output.substr(0, output.indexOf("\n"));
                 }
@@ -276,7 +278,7 @@ class GitRunnerRepo extends BaseRepo {
                 process: function(result, code, output) {
                     if (code != 0) {
                         console.log(output);
-                        throw new Error("Unexpected exit code " + code);
+                        throw new Error("Unexpected exit code from writeCommit " + code);
                     }
                     result.commitRef = output.substr(0, output.indexOf("\n"));
                 }
@@ -309,10 +311,10 @@ class GitRunnerRepo extends BaseRepo {
         git.run(
             repo.spawnOptions,
             [{
-                params: (options, result) => params
+                params: () => params
             }],
             {},
-            function(err, res) {
+            function(err) {
                 if (err) return callback(err);
                 result.message = "Pushed";
                 result.remoteCommit = repo.options.lastCommitSynced;

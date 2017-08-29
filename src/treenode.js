@@ -24,15 +24,41 @@ export default class TreeNodeHandler extends Syncable {
         handleFoundEntity("treenode", e);
         callback();
     }
+
+    loadFromDb(handleFoundEntity, done) {
+        let { dataHandler, dbCollection, key } = this;
+        dataHandler.db[dbCollection].find({
+            repo: dataHandler.repo.options.id,
+            user: dataHandler.repo.options.user
+        }).each(function(err, item) {
+            if (err || !item) return done(err, item);
+            // todo: this probably no longer needed if gitObjectType is populated reliably
+            if (!item.gitObjectType) item.gitObjectType = item.type;
+            handleFoundEntity(key, item);
+        });
+    }
     populateFromGit(allEntities, entity, done) {
         done(null, entity);
     }
     merge(o, a, b, callback) {
-        // all three objects will be set and populated with full data at this point.
-        var changedFields = {};
+        // TreeNodes always come from the remote so should never need merging;
+        // this will only be called during a reset
+        let changedFields = {};
+        if (b.hash != a.hash) {
+            changedFields.hash = b.hash;
+        }
         callback(null, changedFields);
     }
-
+    matchMergedEntityDefinite(entity, possibleMatches, idMapping) {
+        for (let mk in possibleMatches) {
+            let e2 = possibleMatches[mk];
+            if (entity.path == e2.path) return e2;
+        }
+    }
+    matchMergedEntityProbable(entity, possibleMatches, idMapping) {
+    }
+    matchMergedEntityPossible(entity, possibleMatches, idMapping) {
+    }
     getTreeNodesForEntity(allEntities, entity, index, callback) {
         var treeNodes = [];
 

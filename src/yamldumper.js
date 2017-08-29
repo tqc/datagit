@@ -1,11 +1,17 @@
+/* eslint-disable no-underscore-dangle, no-multi-spaces, strict, space-before-function-paren, yoda, no-shadow, no-nested-ternary, one-var-declaration-per-line */
+// originally from js-yaml
+// modified to avoid writing explicit indent/flow/chomp headers when not necessary
+// eg "summary: >+\n"
+
 'use strict';
 
 /*eslint-disable no-use-before-define*/
+/*eslint-disable indent*/
 
-var common              = require('./common');
-var YAMLException       = require('./exception');
-var DEFAULT_FULL_SCHEMA = require('./schema/default_full');
-var DEFAULT_SAFE_SCHEMA = require('./schema/default_safe');
+var common              = require('js-yaml/lib/js-yaml/common');
+var YAMLException       = require('js-yaml/lib/js-yaml/exception');
+var DEFAULT_FULL_SCHEMA = require('js-yaml/lib/js-yaml/schema/default_full');
+var DEFAULT_SAFE_SCHEMA = require('js-yaml/lib/js-yaml/schema/default_safe');
 
 var _toString       = Object.prototype.toString;
 var _hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -305,7 +311,9 @@ function chooseScalarStyle(string, singleLineOnly, indentPerLevel, lineWidth, te
   }
   // At this point we know block styles are valid.
   // Prefer literal style unless we want to fold.
-  return hasFoldableLine ? STYLE_FOLDED : STYLE_LITERAL;
+  // return hasFoldableLine ? STYLE_FOLDED : STYLE_LITERAL;
+  // folded is the default, so we don't need the literal header
+  return STYLE_FOLDED;
 }
 
 // Note: line breaking/folding is implemented for only the folded style.
@@ -352,8 +360,14 @@ function writeScalar(state, string, level, iskey) {
         return '|' + blockHeader(string, state.indent)
           + dropEndingNewline(indentString(string, indent));
       case STYLE_FOLDED:
+        if (string[0] == ' ' || string.trim()[0] == "\"" || string.trim()[0] == "'") {
+          // custom indenting or starting with special character - use original behavior
         return '>' + blockHeader(string, state.indent)
-          + dropEndingNewline(indentString(foldString(string, lineWidth), indent));
+          + indentString(foldString(string, lineWidth), indent);
+        }
+        // default folding style - not too worried about trailing whitespace
+        return '\n'
+          + indentString(foldString(string, lineWidth), indent);
       case STYLE_DOUBLE:
         return '"' + escapeString(string, lineWidth) + '"';
       default:
@@ -799,3 +813,4 @@ function safeDump(input, options) {
 
 module.exports.dump     = dump;
 module.exports.safeDump = safeDump;
+module.exports.foldString = foldString;
