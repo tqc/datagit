@@ -1,6 +1,6 @@
 {
   "name": "datagit",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Sync a database with a git repository",
   "author": "Tom Clarkson <tom@orangeguava.com> (http://tqclarkson.com)",
   "repository": {
@@ -38,7 +38,7 @@
     "babel-preset-react": "^6.24.1",
     "chai": "^3.5.0",
     "eslint": "^2.13.0",
-    "eslint-config-tqc": "^1.0.6",
+    "eslint-config-tqc": "^1.0.10",
     "lodash": "^4.16.6",
     "mocha": "^2.4.5",
     "mongo-mock": "^2.1.0"

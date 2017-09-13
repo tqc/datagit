@@ -428,14 +428,9 @@ class Syncable {
             let val = conf[k];
             if (!val) continue;
             if (typeof val == "string" && val.indexOf("\n") >= 0) {
-                // clear lines containing only spaces
-                val = val.replace(/\n[^\S\n]+\n/g, "\n\n");
+                // clear trailing whitespace
+                val = val.replace(/([^\S\n])+\n/g, "\n");
 
-                if (val.indexOf("\n\n") >= 0) {
-                    // this is probably an old file with erroneously tripled newlines
-                    // todo: this can be removed later
-                    continue;
-                }
                 // assume this is a markdown field
                 // double the newlines
                 val = val.replace(/\n/g, "\n\n");
@@ -446,15 +441,15 @@ class Syncable {
 
         if (this.configFileBodyField) {
             let val = contentBlock || '';
-            // clear lines containing only spaces
-            val = val.replace(/\n[^\S\n]+\n/g, "\n\n");
+            // clear trailing whitespace
+            val = val.replace(/([^\S\n])+\n/g, "\n");
             conf[this.configFileBodyField] = val;
         }
 
         for (let k in conf) {
             let val = conf[k];
             if (!val) continue;
-            if (typeof val == "string" && val.indexOf("<p") == 0) {
+            if (typeof val == "string" && (val.indexOf("<p") == 0 || val.indexOf("<annotation") >= 0 || val.indexOf("</annotation>") >= 0)) {
                 // fix some old files that contain html instead of md
 
                 val = val
@@ -473,8 +468,9 @@ class Syncable {
                     .replace(/<\/text:span>/g, "")
                     .replace(/&quot;/g, "\"")
                     .replace(/&#39;/g, "'")
+                    .replace(/<\/?annotation[^>]*>/g, "\n")
                     .replace(/\n\n+\n/g, "\n\n")
-                    .replace(/<\/?annotation[^>]*>/, "")
+                    .replace(/\n[^\S\n]+\n/g, "\n\n")
                     .trim();
 
                 // fix the result of an old import script bug

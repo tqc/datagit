@@ -24,6 +24,11 @@ class GitRepo {
     connect(callback, progress) {
         callback("Not Implemented");
     }
+
+    deleteRepo(callback, progress) {
+        callback("Not Implemented - deleteRepo");
+    }
+
     /**
      * fetch all remote refs
      **/
