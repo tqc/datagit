@@ -19,14 +19,14 @@ class DataHandler {
     readFullEntitiesFromCommit(ref, callback) {
         this.readEntitiesFromTree(ref, (err, entities) => {
             if (err) callback(err);
-            async.each(
+            async.eachSeries(
                 this.allEntityKeys,
                 (ek, nextType) => {
                     let handler = this.entityHandlers[ek];
-                    async.each(
+                    async.eachSeries(
                         Object.keys(entities[ek]),
                         (id, nextEntity) => {
-                            handler.populateFromGit(entities, entities[ek][id], nextEntity);
+                            handler.populateFullData(entities, entities[ek][id], nextEntity);
                         },
                         nextType
                     );
@@ -35,6 +35,103 @@ class DataHandler {
             );
         });
     }
+
+    // used for testing individual entity handlers.
+    readEntityFromNode(treeNode, entityKey, parentEntity, shouldPopulate, callback) {
+        let dh = this;
+        var result = {
+            source: (treeNode && treeNode.hash) || "None"
+        };
+
+        for (let i = 0; i < this.allEntityKeys.length; i++) {
+            result[this.allEntityKeys[i]] = {};
+        }
+
+        if (!treeNode) {
+            callback(null, result, true);
+            return;
+        }
+
+        let entityHandler = this.entityHandlers[entityKey];
+
+        if (!entityHandler) return callback("Invalid entity type " + entityKey);
+
+        if (parentEntity) {
+            if (!result[parentEntity.type]) return callback("Invalid parent entity type");
+            if (!parentEntity.id) return callback("Parent entity must have id set");
+
+            result[parentEntity.type][parentEntity.id] = parentEntity;
+        }
+
+
+        entityHandler.readEntityFromNode(
+            treeNode,
+            parentEntity,
+            result,
+            function(type, data) {
+                if (type == entityKey && !result.rootEntity) {
+                    result.rootEntity = data;
+                }
+                data.type = data.type || type;
+                result[type][data.id] = data;
+            },
+            function(err) {
+                if (err) return callback(err);
+                if (shouldPopulate) {
+                    async.eachSeries(
+                        dh.allEntityKeys,
+                        (ek, nextType) => {
+                            let handler = dh.entityHandlers[ek];
+                            async.eachSeries(
+                                Object.keys(result[ek]),
+                                (id, nextEntity) => {
+                                    if (parentEntity && id == parentEntity.id) {
+                                        // the test parent entity doesn't really exist in git, so
+                                        // don't try to load it
+                                        nextEntity();
+                                        return;
+                                    }
+                                    handler.populateFullData(result, result[ek][id], nextEntity);
+                                },
+                                nextType
+                            );
+                        },
+                        (err) => callback(err, result)
+                    );
+                }
+                else {
+                    callback(err, result, true);
+                }
+            }
+        );
+    }
+
+    readEntityFromTreeRef(path, treeRef, entityKey, parentEntity, shouldPopulate, callback) {
+        let dh = this;
+        dh.repo.readTree(treeRef, function(err, treeNode) {
+            if (err) return callback(err);
+
+            treeNode.path = path;
+            treeNode.name = path.indexOf("/") >= 0 ? path.substr(path.lastIndexOf("/") + 1) : path;
+
+            dh.readEntityFromNode(treeNode, entityKey, parentEntity, shouldPopulate, callback);
+        });
+    }
+
+    readEntityFromFileRef(path, hash, entityKey, parentEntity, shouldPopulate, callback) {
+        let dh = this;
+
+        let treeNode = {
+            permissions: '100644',
+            type: "blob",
+            hash,
+            path,
+            name: path.indexOf("/") >= 0 ? path.substr(path.lastIndexOf("/") + 1) : path
+        };
+
+        dh.readEntityFromNode(treeNode, entityKey, parentEntity, shouldPopulate, callback);
+    }
+
     readEntitiesFromTree(commit, callback) {
         var dh = this;
         console.log("Read from tree");
@@ -51,7 +148,6 @@ class DataHandler {
         }
         dh.repo.readTree(commit, function(err, tree) {
             if (err) return callback(err);
-            // console.log(tree);
 
             let outerTree = {
                 contents: {
@@ -65,7 +161,6 @@ class DataHandler {
                 dh.allEntityKeys,
                 result,
                 function(type, data) {
-                    // console.log("Found entity of type " + type);
                     data.type = data.type || type;
                     result[type][data.id] = data;
                 },
@@ -90,18 +185,14 @@ class DataHandler {
             dh.entityHandlers,
             function(entity, next) {
                 // iterate files
-                console.log("Looking for " + entity.key + " in db");
                 entity.loadFromDb(
                     function(type, data) {
-                        // console.log("Found entity of type " + type);
-                        result.message = "Found " + type;
                         result[type][data.id] = data;
                         if (data.modified) result.modified = true;
                         callback(null, result, false);
                     },
                     function(err, remainingNodes) {
                         if (err) return next(err);
-                        console.log(Object.keys(result[entity.key]).length + " found in db");
                         next();
                     });
             },
@@ -120,40 +211,76 @@ class DataHandler {
         // given a set of entities, write objects to git and return an array of
         // tree nodes to be added to the parent e
         var treeNodes = [];
+        var groupedTreeNodes = {};
+        for (let i = 0; i < this.allEntityKeys.length; i++) {
+            groupedTreeNodes[this.allEntityKeys[i]] = [];
+        }
+
         async.eachSeries(
             dh.entityHandlers,
             function(entity, nextType) {
                 // iterate files
-                console.log("Looking for " + entity.key);
                 var parentKey = entity.parentKey || "parent";
                 var allKeys = Object.keys(allEntities[entity.key]);
                 var filteredKeys = allKeys.filter(k => allEntities[entity.key][k][parentKey] == parentId);
-                console.log("Looking for key list property " + entity.parentCollectionKey);
                 if (parentEntity && parentEntity[entity.parentCollectionKey]) {
-                    console.log("Found key list property " + entity.parentCollectionKey);
                     filteredKeys = parentEntity[entity.parentCollectionKey];
                 }
-                console.log("Found " + filteredKeys.length + " items");
                 entity.getTreeNodesForEntities(allEntities, filteredKeys.map(k => allEntities[entity.key][k]).filter(o => !!o), function(err, arr) {
                     if (err) return callback(err);
-                    treeNodes.push.apply(treeNodes, arr);
+                    [].push.apply(treeNodes, arr);
+                    [].push.apply(groupedTreeNodes[entity.key], arr);
                     nextType();
                 });
             },
             function(err) {
                 if (err) return callback(err);
-                callback(null, treeNodes, true);
+                callback(null, treeNodes, groupedTreeNodes);
             }
         );
 
     }
+
+    fileNode(name, hash) {
+        return {
+            permissions: "100644",
+            type: "blob",
+            hash,
+            name
+        };
+    }
+
+    wrapTreeNodes(name, treeNodes, callback) {
+        let dataHandler = this;
+
+        if (!treeNodes || !treeNodes.length) {
+            return callback();
+        }
+
+        dataHandler.repo.writeTree(treeNodes, function(err, hash) {
+            if (err) return callback(err);
+            var fn = {
+                type: "tree",
+                permissions: "040000",
+                hash: hash,
+                name: name,
+                contents: {}
+            };
+            for (let n of treeNodes) {
+                fn.contents[n.name] = n;
+            }
+            callback(null, fn);
+
+        });
+
+    }
+
     commitEntities(dbEntities, parentCommits, message, callback) {
         var dh = this;
         dh.repo.readCommit(parentCommits[0], function(err, parentCommit) {
             if (err) return callback(err);
             dh.getTreeNodesForEntities(dbEntities, null, function(err, arr) {
                 if (err) return callback(err);
-                console.log(arr);
 
                 dh.repo.writeTree(arr, function(err, hash) {
                     if (err) return callback(err);
@@ -254,8 +381,6 @@ class DataHandler {
 
                 // remove any remote or concestor keys that appear in the mappings
 
-                console.log(allKeysSet);
-
                 for (let k of ak) {
                     if (dbIdToConcestorId[k] && dbIdToConcestorId[k] != k) allKeysSet.delete(dbIdToConcestorId[k]);
                 }
@@ -264,9 +389,6 @@ class DataHandler {
                     if (concestorIdToRemoteId[k] && concestorIdToRemoteId[k] != k) allKeysSet.delete(concestorIdToRemoteId[k]);
                 }
                 let allKeys = Array.from(allKeysSet);
-
-                console.log(allKeys);
-
 
                 async.eachSeries(
                     allKeys,
@@ -305,7 +427,6 @@ class DataHandler {
                                     console.log(err);
                                     return nextKey(err);
                                 }
-                                //console.log(d);
                                 result[entity.key].push({
                                     op: "insert",
                                     d: d
@@ -373,6 +494,11 @@ class DataHandler {
     }
     // read all entities from a given tree node
     processTreeNode(treeNode, parentEntity, expectedEntityKeys, foundEntities, handleFoundEntity, done) {
+        if (!treeNode) {
+            // this makes it easier to call with optional nodes
+            done();
+            return;
+        }
         var dh = this;
         var unclaimedNodes = Object.keys(treeNode.contents);
         async.eachSeries(
@@ -380,7 +506,6 @@ class DataHandler {
             function(entityKey, next) {
                 // iterate files
                 let entity = dh.entityHandlers[entityKey];
-                console.log("Looking for " + entity.key + " in tree");
                 entity.readEntitiesFromTree(parentEntity, treeNode,
                     unclaimedNodes,
                     foundEntities,
@@ -388,7 +513,6 @@ class DataHandler {
                     function(err, remainingNodes) {
                         if (err) return next(err);
                         unclaimedNodes = remainingNodes;
-                        console.log(Object.keys(foundEntities[entityKey]).length + " found in tree");
                         next();
                     });
             },
@@ -421,6 +545,19 @@ class DataHandler {
                 done();
             }
         );
+    }
+
+    getChildEntityKeys(foundEntities, childEntityKey, parentId) {
+        let childEntityHandler = this.entityHandlers[childEntityKey];
+        return Object.keys(foundEntities[childEntityKey])
+            .filter(ok => foundEntities[childEntityKey][ok][childEntityHandler.parentKey || "parent"] == parentId)
+            .sort((a, b) => {
+                a = foundEntities[childEntityKey][a].treeNode.name;
+                b = foundEntities[childEntityKey][b].treeNode.name;
+                if (a < b) return -1;
+                if (a > b) return 1;
+                return 0;
+            });
     }
 }
 

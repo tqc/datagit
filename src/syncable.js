@@ -387,18 +387,45 @@ class Syncable {
 
 
     parseConfigYaml(text) {
+        if (!text) return {};
+
         var re = /^(-{3}(?:\n|\r)([\w\W]+?)(?:\n|\r)-{3}\r?\n?)?([\w\W]*)*/,
             results = re.exec(text),
             conf = {},
             yamlOrJson,
             contentBlock = "";
 
-        if (text.indexOf("---") == 0) {
+        let mdm = text.match(/^\n*(# ([\S ]*)\n)\n*((> ((.*\n)(.+\n)*)))?\n*([\s\S]*)/);
+        let ymlm = text.match(/^(#.*\n|\n)*(\w+:.*\n)/);
+
+
+        if (results && text.indexOf("---") == 0) {
             yamlOrJson = results[2];
             contentBlock = results[3];
         }
-        else {
+        else if (text[0] == "{") {
+            // json
             yamlOrJson = text;
+        }
+        else if (ymlm) {
+            // yaml
+            yamlOrJson = text;
+        }
+        else if (mdm) {
+            // md with title
+            conf = {
+                title: mdm[2]
+            };
+            if (mdm[5]) conf.summary = mdm[5]
+                .replace(/\n> /g, "\n")
+                .replace(/ +/g, " ")
+                .trim();
+            contentBlock = (mdm[8] || "").trim();
+        }
+        else {
+            // this probably shouldn't be reachable
+            console.log(text);
+            throw new Error("Unexpected file content");
         }
 
         if (yamlOrJson) {
@@ -439,7 +466,7 @@ class Syncable {
             }
         }
 
-        if (this.configFileBodyField) {
+        if (this.configFileBodyField && (contentBlock || !conf[this.configFileBodyField])) {
             let val = contentBlock || '';
             // clear trailing whitespace
             val = val.replace(/([^\S\n])+\n/g, "\n");
@@ -449,40 +476,60 @@ class Syncable {
         for (let k in conf) {
             let val = conf[k];
             if (!val) continue;
-            if (typeof val == "string" && (val.indexOf("<p") == 0 || val.indexOf("<annotation") >= 0 || val.indexOf("</annotation>") >= 0)) {
+            if (typeof val == "string" && (val.trim().indexOf("<") == 0)) {
                 // fix some old files that contain html instead of md
 
                 val = val
-                    .replace(/<p>#<\/p>/g, "") // fix the result of an old import script bug
-                    .replace(/&nbsp;/g, " ")
-                    .replace(/<p>/g, "\n\n")
-                    .replace(/<br>/g, "\n")
-                    .replace(/<\/p>/g, "")
-                    .replace(/<div[^>]*>/g, "\n\n")
-                    .replace(/<\/div>/g, "")
+                    .replace(/<p>#<\/p>/gi, "") // fix the result of an old import script bug
+                    .replace(/&nbsp;/gi, " ")
+                    .replace(/<p[^>]*>/gi, "\n\n")
+                    .replace(/<br>/gi, "\n")
+                    .replace(/<\/p>/gi, "")
+                    .replace(/<div[^>]*>/gi, "\n\n")
+                    .replace(/<\/div>/gi, "")
+                    .replace(/<\/?meta[^>]*>/gi, "")
+                    .replace(/<\/?html[^>]*>/gi, "")
+                    .replace(/<\/?body[^>]*>/gi, "")
 
-                    .replace(/<span[^>]*>/g, "")
-                    .replace(/<\/span>/g, "")
-                    .replace(/<text:span[^>]*>#<\/text:span>/g, "")
-                    .replace(/<text:span[^>]*>/g, "")
-                    .replace(/<\/text:span>/g, "")
-                    .replace(/&quot;/g, "\"")
-                    .replace(/&#39;/g, "'")
-                    .replace(/<\/?annotation[^>]*>/g, "\n")
-                    .replace(/\n\n+\n/g, "\n\n")
-                    .replace(/\n[^\S\n]+\n/g, "\n\n")
+                    .replace(/<style[^>]*>[^>]*<\/style>/gi, "")
+
+                    .replace(/<head[^>]*>[^>]*<\/head>/gi, "")
+
+                    .replace(/<span[^>]*>/gi, "")
+                    .replace(/<\/span>/gi, "")
+                    .replace(/<text:span[^>]*>#<\/text:span>/gi, "")
+                    .replace(/<text:span[^>]*>/gi, "")
+                    .replace(/<\/text:span>/gi, "")
+                    .replace(/&quot;/gi, "\"")
+                    .replace(/&#39;/gi, "'")
+                    .replace(/<\/?annotation[^>]*>/gi, "\n")
+                    .replace(/\n\n+\n/gi, "\n\n")
+                    .replace(/\n[^\S\n]+\n/gi, "\n\n")
                     .trim();
 
                 // fix the result of an old import script bug
                 if (val == "#") val = "";
 
+                if (typeof val == "string") {
+                    val = val
+                        // clear trailing whitespace
+                        .replace(/\n[^\S\n]+\n/gi, "\n\n")
+                        .trim();
+                }
+
+                if (!val) continue;
+
                 conf[k] = val;
             }
         }
-
+        if (!conf) {
+            console.log(text);
+            throw new Error("Conf not set");
+        }
         return conf;
     }
-    writeConfigYaml(object, callback) {
+
+    getWritableConfigObject(object) {
         let {configFileBodyField, configFileSkippedKeys, configFileKeyOrder} = this;
         if (!configFileSkippedKeys) configFileSkippedKeys = [];
         if (!configFileKeyOrder) configFileKeyOrder = [];
@@ -490,10 +537,12 @@ class Syncable {
         var cfg = {};
         for (let k in object) {
             if (configFileSkippedKeys.indexOf(k) >= 0) continue;
-            if (["id", "user", "repo", "contentHash"].indexOf(k) >= 0) continue;
+            if (["id", "user", "repo", "contentHash", "treeNode", "parent", "type"].indexOf(k) >= 0) continue;
             if (k == configFileBodyField) continue;
             let val = object[k];
             if (!val) continue;
+            if (Array.isArray(val) && val.length === 0) continue;
+            if (typeof val == "object" && Object.keys(val).length == 0) continue;
             if (typeof val == "string" && val.indexOf("\n") >= 0) {
                 // assume that all fields containing newlines are markdown - ie only
                 // double newlines matter
@@ -507,26 +556,10 @@ class Syncable {
                     .replace(/\n{2}/g, "\n");
                 if (val.trim().length > 0 && val[val.length - 1] != "\n") val += "\n";
             }
-
+            if (!val) continue;
             cfg[k] = val;
         }
 
-
-
-        var fm = dump(cfg, {
-            sortKeys: function sortKeys(a, b) {
-                let ai = configFileKeyOrder.indexOf(a);
-                if (ai < 0) ai = 1000;
-                let bi = configFileKeyOrder.indexOf(b);
-                if (bi < 0) bi = 1000;
-                if (ai < bi) return -1;
-                if (ai > bi) return 1;
-                if (a < b) return -1;
-                if (a > b) return 1;
-                return 0;
-            }
-        });
-        var fc = "---\n" + fm + "---\n";
         if (this.configFileBodyField) {
             let val = object[this.configFileBodyField] || "";
 
@@ -536,16 +569,76 @@ class Syncable {
                 .replace(/([^\n])\n([^\n])/g, "$1$2")
                 .replace(/\n{2}/g, "\n");
 
-            val = foldString(val, 80);
+            val = foldString(val, 80)
+                // in case folding added trailing spaces
+                .replace(/\n[^\S\n]+\n/gi, "\n\n")
+                .trim();
+
             if (val.trim().length > 0 && val[val.length - 1] != "\n") val += "\n";
-            fc += val;
+            cfg.configFileBody = val;
         }
+
+        return cfg;
+
+    }
+
+    writeConfigYaml(cfg, callback) {
+        let {configFileKeyOrder} = this;
+        if (!configFileKeyOrder) configFileKeyOrder = [];
+
+        let configFileBody = cfg.configFileBody;
+        delete cfg.configFileBody;
+
+        let fc = "";
+
+        let customKeys = Object.keys(cfg).filter(k => k != "title" && k != "summary");
+        if (customKeys.length == 0) {
+            // we can use plain markdown;
+            if (cfg.title) {
+                fc += "# " + cfg.title + "\n\n";
+            }
+            if (cfg.summary) {
+                let val = foldString(cfg.summary, 76)
+                    // in case folding added trailing spaces
+                    .replace(/\n[^\S\n]+\n/gi, "\n\n")
+                    // add > to each line
+                    .trim()
+                    .replace(/\n/g, "\n> ")
+                    .replace(/ \n/g, "\n")
+                    .trim();
+                fc += "> " + val + "\n\n";
+            }
+        }
+        else {
+            // we have custom content - use a front matter block
+            var fm = dump(cfg, {
+                sortKeys: function sortKeys(a, b) {
+                    let ai = configFileKeyOrder.indexOf(a);
+                    if (ai < 0) ai = 1000;
+                    let bi = configFileKeyOrder.indexOf(b);
+                    if (bi < 0) bi = 1000;
+                    if (ai < bi) return -1;
+                    if (ai > bi) return 1;
+                    if (a < b) return -1;
+                    if (a > b) return 1;
+                    return 0;
+                }
+            });
+            fc = "---\n" + fm + "---\n";
+        }
+
+        if (configFileBody) {
+            fc += configFileBody;
+        }
+
         return fc;
     }
 
     writeConfigFile(object, callback) {
-        let fc = this.writeConfigYaml(object);
-        this.dataHandler.repo.writeTextFile(fc, callback);
+        let cfg = this.getWritableConfigObject(object);
+
+        let fc = this.writeConfigYaml(cfg);
+        this.dataHandler.repo.writeTextFile(fc, (err, hash) => callback(err, hash, Object.keys(cfg)));
     }
 
 }

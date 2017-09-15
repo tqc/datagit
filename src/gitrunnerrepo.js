@@ -325,7 +325,12 @@ class GitRunnerRepo extends BaseRepo {
     // used for testing
     getPathHash(refPath, callback) {
         var repo = this;
-        git.revParse(repo.spawnOptions, refPath, callback);
+        git.revParse(repo.spawnOptions, refPath, (err, hash) => {
+            if (err && err.message && err.message.indexOf("Unexpected exit code") >= 0) {
+                err = new Error("Unable to resolve " + refPath);
+            }
+            callback(err, hash);
+        });
     }
 }
 
