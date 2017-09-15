@@ -17,6 +17,7 @@ export default class TreeNodeHandler extends Syncable {
             hash: n.hash,
             name: n.name,
             path: n.path,
+            size: n.size,
             permissions: n.permissions
         };
         if (parentEntity) e.parent = parentEntity.id;
@@ -69,7 +70,8 @@ export default class TreeNodeHandler extends Syncable {
             permissions: entity.permissions,
             type: entity.gitObjectType,
             hash: entity.hash,
-            name: entity.name
+            name: entity.name,
+            size: entity.size
         });
 
         callback(null, treeNodes);

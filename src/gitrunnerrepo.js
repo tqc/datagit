@@ -66,7 +66,6 @@ class GitRunnerRepo extends BaseRepo {
 
     }
     connect(callback, progress) {
-        console.log("Attempt setup of git repo");
 
         this.ensureLocalRepo(function(err) {
             if (err) return callback(err);
@@ -156,9 +155,6 @@ class GitRunnerRepo extends BaseRepo {
     readTree(commit, callback, progress) {
         var repo = this;
         git.tree(repo.spawnOptions, commit, function(err, tree) {
-            console.log(commit);
-            console.log(err);
-            console.log(tree);
             callback(err, tree);
         });
     }
@@ -227,7 +223,6 @@ class GitRunnerRepo extends BaseRepo {
     }
     writeTree(treeNodes, callback, progress) {
         var sortedNodes = treeNodes.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
-        console.log(sortedNodes);
         var repo = this;
         git.run(
             repo.spawnOptions,
@@ -238,7 +233,6 @@ class GitRunnerRepo extends BaseRepo {
                     for (var i = 0; i < sortedNodes.length; i++) {
                         var n = sortedNodes[i];
                         let line = n.permissions + " " + n.type + " " + n.hash + "\t" + n.name + "\n";
-                        console.log(line);
                         stdin.write(line);
                     }
                     stdin.end();

@@ -134,7 +134,6 @@ class DataHandler {
 
     readEntitiesFromTree(commit, callback) {
         var dh = this;
-        console.log("Read from tree");
         var result = {
             source: commit
         };
@@ -172,7 +171,6 @@ class DataHandler {
     }
     readEntitiesFromDb(callback) {
         var dh = this;
-        console.log("Read from db");
         var result = {
             source: "db"
         };
@@ -397,11 +395,6 @@ class DataHandler {
                         let o = concestorEntities[entity.key][dbIdToConcestorId[id] || id];
                         let a = dbEntities[entity.key][id];
                         let b = remoteEntities[entity.key][concestorIdToRemoteId[dbIdToConcestorId[id] || id] || id];
-
-
-                        console.log(o);
-                        console.log(a);
-                        console.log(b);
 
                         if (a && b && a.contentHash == b.contentHash && concestorEntities.source != "db") {
                             // db and remote are the same - do nothing regardless of concestor state

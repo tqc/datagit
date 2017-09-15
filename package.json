@@ -1,6 +1,6 @@
 {
   "name": "datagit",
-  "version": "0.0.16",
+  "version": "0.0.18",
   "description": "Sync a database with a git repository",
   "author": "Tom Clarkson <tom@orangeguava.com> (http://tqclarkson.com)",
   "repository": {
@@ -22,7 +22,7 @@
     "cuid": "^1.3.8",
     "fast-levenshtein": "^2.0.6",
     "fs-extra": "^0.30.0",
-    "gitrunner": "^2.0.19",
+    "gitrunner": "^2.0.20",
     "js-yaml": "^3.9.1"
   },
   "devDependencies": {
