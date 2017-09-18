@@ -237,9 +237,10 @@ class GitRunnerRepo extends BaseRepo {
                     }
                     stdin.end();
                 },
-                process: function(result, code, output) {
+                process: function(result, code, output, stderr) {
                     if (code != 0) {
                         console.log(output);
+                        console.log(stderr);
                         throw new Error("Unexpected exit code from writeTree " + code);
                     }
                     result.treeRef = output.substr(0, output.indexOf("\n"));

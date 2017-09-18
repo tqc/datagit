@@ -417,6 +417,7 @@ class Syncable {
                 title: mdm[2]
             };
             if (mdm[5]) conf.summary = mdm[5]
+                .replace(/\n> ?\n/g, "\n\n")
                 .replace(/\n> /g, "\n")
                 .replace(/ +/g, " ")
                 .trim();
@@ -447,24 +448,25 @@ class Syncable {
                 }
 
                 conf = yaml.load(yamlOrJson);
+
+                for (let k in conf) {
+                    let val = conf[k];
+                    if (!val) continue;
+                    if (typeof val == "string" && val.indexOf("\n") >= 0) {
+                        // clear trailing whitespace
+                        val = val.replace(/([^\S\n])+\n/g, "\n");
+
+                        // assume this is a markdown field
+                        // double the newlines
+                        val = val.replace(/\n/g, "\n\n");
+
+                        conf[k] = val;
+                    }
+                }
+
             }
         }
 
-
-        for (let k in conf) {
-            let val = conf[k];
-            if (!val) continue;
-            if (typeof val == "string" && val.indexOf("\n") >= 0) {
-                // clear trailing whitespace
-                val = val.replace(/([^\S\n])+\n/g, "\n");
-
-                // assume this is a markdown field
-                // double the newlines
-                val = val.replace(/\n/g, "\n\n");
-
-                conf[k] = val;
-            }
-        }
 
         if (this.configFileBodyField && (contentBlock || !conf[this.configFileBodyField])) {
             let val = contentBlock || '';

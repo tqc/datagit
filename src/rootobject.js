@@ -25,14 +25,14 @@ export default class RootObject extends Syncable {
             // include all the standard repo properties so merge doesn't think they are being deleted
             ...this.dataHandler.repo.options,
             contentHash: n.hash,
-            treeNode: n
+            treeNode: n,
+            title: this.dataHandler.repo.options.title || this.dataHandler.repo.options.remoteUrl
         };
-
         delete e.userSettings;
 
         handleFoundEntity("rootobject", e);
 
-        this.dataHandler.processTreeNode(n, e, ["treenode"], foundEntities, handleFoundEntity, function(err) {
+        this.dataHandler.processTreeNode(n, e, this.dataHandler.allEntityKeys, foundEntities, handleFoundEntity, function(err) {
 
             done(err);
         });
@@ -67,7 +67,6 @@ export default class RootObject extends Syncable {
     getTreeNodesForEntity(allEntities, entity, index, callback) {
         let { dataHandler } = this;
 
-        // first, process chapters
         dataHandler.getTreeNodesForEntities(allEntities, entity, function(err, treeNodes) {
             if (err) return callback(err);
             callback(null, treeNodes);

@@ -1,6 +1,6 @@
 {
   "name": "datagit",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "Sync a database with a git repository",
   "author": "Tom Clarkson <tom@orangeguava.com> (http://tqclarkson.com)",
   "repository": {
@@ -11,7 +11,7 @@
     "url": "https://github.com/tqc/datagit/issues"
   },
   "scripts": {
-    "test": "eslint . && mocha test/index.js --compilers js:babel-core/register",
+    "test": "eslint . && mocha test/index.js --compilers js:babel-core/register --recursive",
     "prepublish": "babel src -d build",
     "compile": "babel src -d build"
   },
@@ -22,7 +22,7 @@
     "cuid": "^1.3.8",
     "fast-levenshtein": "^2.0.6",
     "fs-extra": "^0.30.0",
-    "gitrunner": "^2.0.20",
+    "gitrunner": "^2.0.21",
     "js-yaml": "^3.9.1"
   },
   "devDependencies": {

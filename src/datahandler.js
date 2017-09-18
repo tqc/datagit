@@ -106,13 +106,28 @@ class DataHandler {
         );
     }
 
+    updateTreePath(treeNode, path) {
+        if (!path) return;
+        if (!treeNode.name) {
+            treeNode.path = path;
+            treeNode.name = path.indexOf("/") >= 0 ? path.substr(path.lastIndexOf("/") + 1) : path;
+        }
+        else {
+            treeNode.path = path + "/" + treeNode.name;
+        }
+        if (!treeNode.contents) return;
+        for (let k in treeNode.contents) {
+            this.updateTreePath(treeNode.contents[k], treeNode.path);
+        }
+    }
+
     readEntityFromTreeRef(path, treeRef, entityKey, parentEntity, shouldPopulate, callback) {
         let dh = this;
+
         dh.repo.readTree(treeRef, function(err, treeNode) {
             if (err) return callback(err);
 
-            treeNode.path = path;
-            treeNode.name = path.indexOf("/") >= 0 ? path.substr(path.lastIndexOf("/") + 1) : path;
+            dh.updateTreePath(treeNode, path);
 
             dh.readEntityFromNode(treeNode, entityKey, parentEntity, shouldPopulate, callback);
         });
@@ -205,7 +220,6 @@ class DataHandler {
     getTreeNodesForEntities(allEntities, parentEntity, callback) {
         var dh = this;
         var parentId = parentEntity ? parentEntity.id : null;
-        console.log("Processing child entities for " + parentId);
         // given a set of entities, write objects to git and return an array of
         // tree nodes to be added to the parent e
         var treeNodes = [];
@@ -248,6 +262,16 @@ class DataHandler {
         };
     }
 
+    folderNode(name, hash) {
+        return {
+            permissions: "040000",
+            type: "tree",
+            hash,
+            name,
+            contents: {}
+        };
+    }
+
     wrapTreeNodes(name, treeNodes, callback) {
         let dataHandler = this;
 
@@ -257,13 +281,7 @@ class DataHandler {
 
         dataHandler.repo.writeTree(treeNodes, function(err, hash) {
             if (err) return callback(err);
-            var fn = {
-                type: "tree",
-                permissions: "040000",
-                hash: hash,
-                name: name,
-                contents: {}
-            };
+            var fn = dataHandler.folderNode(name, hash);
             for (let n of treeNodes) {
                 fn.contents[n.name] = n;
             }
