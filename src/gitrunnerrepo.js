@@ -97,6 +97,9 @@ class GitRunnerRepo extends BaseRepo {
 
         callback(null, result, false);
         git.run(repo.spawnOptions, [{
+            params: (options) => ['remote', 'set-url', 'origin', repo.options.remoteUrl]
+        },
+        {
             params: (options) => ['fetch', 'origin']
         },
         {
@@ -306,6 +309,9 @@ class GitRunnerRepo extends BaseRepo {
         git.run(
             repo.spawnOptions,
             [{
+                params: (options) => ['remote', 'set-url', 'origin', repo.options.remoteUrl]
+            },
+            {
                 params: () => params
             }],
             {},
