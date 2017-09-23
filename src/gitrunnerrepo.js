@@ -83,6 +83,15 @@ class GitRunnerRepo extends BaseRepo {
             callback(null, result, true);
         });
     }
+
+    deleteRepo(callback) {
+        let {repoPath} = this;
+
+        if (!repoPath) return callback("Git path not set");
+        if (fs.existsSync(repoPath)) fs.removeSync(repoPath);
+        return callback();
+    }
+
     fetch(callback, progress) {
         var repo = this;
         console.log("Attempt fetch of git repo");
