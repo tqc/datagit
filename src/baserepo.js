@@ -73,6 +73,11 @@ class GitRepo {
     writeTextFile(fileContents, callback, progress) {
         callback("Not Implemented");
     }
+
+    writeFromUrl(url, callback) {
+        callback("Not Implemented");
+    }
+
     /**
      * Given an array of tree nodes, write a tree to git
      * and return the hash.
